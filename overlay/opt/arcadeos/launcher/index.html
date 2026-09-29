@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ArcadeOS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="boot" class="boot">
+    <div class="boot-mark" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect x="3" y="10" width="26" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="11" cy="17" r="2.2" fill="currentColor"/>
+        <circle cx="21" cy="17" r="2.2" fill="currentColor"/>
+        <path d="M8 10V8h16v2" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+    </div>
+    <h1>ArcadeOS</h1>
+    <p>Ubuntu · session jeu · pas de bureau</p>
+    <div class="boot-bar"><span></span></div>
+    <p class="boot-skip">Touche pour passer</p>
+  </div>
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+          <rect x="3" y="10" width="26" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
+          <circle cx="11" cy="17" r="2.2" fill="currentColor"/>
+          <circle cx="21" cy="17" r="2.2" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <strong>ArcadeOS</strong>
+        <small id="view-label">Bibliothèque</small>
+      </div>
+    </div>
+    <div class="status">
+      <button type="button" id="btn-settings">Réglages</button>
+      <span id="clock" class="tabular">--:--</span>
+    </div>
+  </header>
+
+  <main id="library" class="library">
+    <p class="kicker">En vedette</p>
+    <h2 id="feat-title">STACK</h2>
+    <p id="feat-blurb" class="blurb">Sept pièces. Une grille. Les lignes disparaissent.</p>
+    <div class="actions">
+      <button type="button" class="primary" id="btn-play">Jouer</button>
+      <span id="feat-meta" class="chip">Puzzle · intégré</span>
+    </div>
+    <div id="rail" class="rail"></div>
+    <footer class="hint">← → naviguer · Entrée jouer · Esc quitter un jeu</footer>
+  </main>
+
+  <section id="settings" class="settings hidden">
+    <button type="button" class="ghost" id="btn-back">Retour</button>
+    <h2>Système</h2>
+    <p class="muted">Ubuntu 24.04 LTS · Sway kiosk · greetd auto-login</p>
+    <article>
+      <h3>Session</h3>
+      <p>Utilisateur <strong>gamer</strong> · mot de passe <strong>gamer</strong></p>
+      <p>Super+Return ouvre un terminal. TTY2 reste disponible.</p>
+    </article>
+    <div class="actions" id="power-row"></div>
+  </section>
+
+  <div id="game" class="game hidden">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script src="games.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""ArcadeOS kiosk — fullscreen WebKitGTK launcher. No desktop chrome."""
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+gi_ok = True
+try:
+    import gi
+
+    gi.require_version("Gtk", "3.0")
+    gi.require_version("WebKit2", "4.1")
+    from gi.repository import GLib, Gtk, Gdk, WebKit2
+except Exception as exc:  # pragma: no cover
+    gi_ok = False
+    gi_error = exc
+
+LAUNCHER = os.environ.get(
+    "ARCADEOS_LAUNCHER", "/opt/arcadeos/launcher/index.html"
+)
+
+COMMANDS = {
+    "neverball": ["neverball"],
+    "pingus": ["pingus"],
+    "lbreakout2": ["lbreakout2"],
+    "terminal": ["foot"],
+    "foot": ["foot"],
+}
+
+
+def which_cmd(name):
+    argv = COMMANDS.get(name, [name])
+    path = shutil.which(argv[0])
+    return [path] + argv[1:] if path else None
+
+
+def power(kind):
+    subprocess.Popen(["systemctl", kind, "-i"])
+
+
+def extract_payload(result):
+    for attr in ("get_js_value", "get_value"):
+        if hasattr(result, attr):
+            try:
+                val = getattr(result, attr)()
+                if hasattr(val, "to_string"):
+                    return val.to_string()
+                return str(val)
+            except Exception:
+                continue
+    try:
+        return str(result)
+    except Exception:
+        return ""
+
+
+class Kiosk(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="ArcadeOS")
+        GLib.set_prgname("arcadeos-kiosk")
+        self.set_name("arcadeos-kiosk")
+        self.fullscreen()
+        self.connect("destroy", Gtk.main_quit)
+        self.connect("key-press-event", self.on_key)
+
+        settings = WebKit2.Settings()
+        for name, value in (
+            ("enable_webgl", True),
+            ("enable_webaudio", True),
+            ("enable_media_stream", True),
+            ("enable_developer_extras", True),
+            ("allow_file_access_from_file_urls", True),
+            ("allow_universal_access_from_file_urls", True),
+            ("enable_javascript", True),
+            ("hardware_acceleration_policy", 0),
+        ):
+            try:
+                settings.set_property(name, value)
+            except Exception:
+                pass
+
+        manager = WebKit2.UserContentManager()
+        try:
+            manager.register_script_message_handler("arcadeos")
+        except TypeError:
+            manager.register_script_message_handler("arcadeos", None)
+        manager.connect("script-message-received::arcadeos", self.on_msg)
+
+        inject = WebKit2.UserScript(
+            """
+            window.arcadeosNative = true;
+            window.arcadeos = {
+              native: true,
+              call: function(method, payload) {
+                try {
+                  window.webkit.messageHandlers.arcadeos.postMessage(
+                    JSON.stringify({method: method, payload: payload || null})
+                  );
+                } catch (e) {}
+              }
+            };
+            """,
+            WebKit2.UserContentInjectedFrames.ALL_FRAMES,
+            WebKit2.UserScriptInjectionTime.START,
+            None,
+            None,
+        )
+        manager.add_script(inject)
+
+        try:
+            self.view = WebKit2.WebView.new_with_user_content_manager(manager)
+        except TypeError:
+            self.view = WebKit2.WebView()
+        self.view.set_settings(settings)
+        self.add(self.view)
+
+        uri = "file://" + LAUNCHER
+        if not os.path.isfile(LAUNCHER):
+            self.view.load_html(
+                "<html><body style='background:#07080c;color:#f0f1f4;"
+                "font-family:sans-serif;padding:40px'><h1>ArcadeOS</h1>"
+                "<p>Launcher missing. Super+Return for a terminal.</p>"
+                "</body></html>",
+                "file:///",
+            )
+        else:
+            self.view.load_uri(uri)
+        self.show_all()
+
+    def on_key(self, _w, event):
+        if event.keyval == Gdk.KEY_F12:
+            try:
+                insp = WebKit2.WebInspector
+                self.view.get_inspector().show()
+            except Exception:
+                pass
+        return False
+
+    def on_msg(self, _manager, result):
+        raw = extract_payload(result)
+        try:
+            msg = json.loads(raw)
+        except Exception:
+            msg = {"method": raw, "payload": None}
+        method = msg.get("method")
+        payload = msg.get("payload")
+        if method == "launch" and payload:
+            argv = which_cmd(str(payload))
+            if argv:
+                subprocess.Popen(argv, cwd=os.path.expanduser("~"))
+        elif method == "poweroff":
+            power("poweroff")
+        elif method == "reboot":
+            power("reboot")
+        elif method == "terminal":
+            argv = which_cmd("foot")
+            if argv:
+                subprocess.Popen(argv)
+
+
+def main():
+    if not gi_ok:
+        sys.stderr.write(f"arcadeos-kiosk: GTK/WebKit unavailable: {gi_error}\n")
+        os.execvp("foot", ["foot"])
+    Gtk.init(None)
+    Kiosk()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

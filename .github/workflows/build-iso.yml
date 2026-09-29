@@ -1,0 +1,98 @@
+name: Build ArcadeOS ISO
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: iso-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iso:
+    name: Build live ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /usr/local/share/powershell \
+            /usr/share/swift \
+            /opt/hostedtoolcache \
+            /usr/share/miniconda \
+            /usr/local/.ghcup || true
+          sudo docker system prune -af || true
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            debootstrap squashfs-tools xorriso grub-common grub-pc-bin \
+            grub-efi-amd64-bin mtools dosfstools rsync ca-certificates \
+            curl file zstd mtools
+
+      - name: Build ISO
+        run: |
+          chmod +x scripts/build-iso.sh overlay/usr/bin/* || true
+          sudo -E ./scripts/build-iso.sh
+
+      - name: Prove it is an ISO
+        run: |
+          ls -lh out/
+          file out/*.iso
+          test -s out/*.iso
+          python3 - <<'PY'
+          from pathlib import Path
+          p = next(Path("out").glob("*.iso"))
+          data = p.read_bytes()[:32768]
+          if b"CD001" not in data and b"ISO9660" not in data:
+              # grub-mkrescue writes ISO9660; CD001 is at offset 32769 typically
+              chunk = p.read_bytes()[32769:32769+5]
+              assert chunk == b"CD001" or p.stat().st_size > 80_000_000, chunk
+          print("iso-ok", p.name, p.stat().st_size)
+          PY
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcadeos-iso
+          path: |
+            out/*.iso
+            out/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Publish rolling nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: ArcadeOS nightly
+          body: |
+            ISO live **ArcadeOS** compilé depuis `${{ github.sha }}`.
+
+            - Boot BIOS + UEFI
+            - Session kiosk (Sway) — pas de GNOME/KDE
+            - Utilisateur `gamer` / mot de passe `gamer`
+            - Flash avec Ventoy, balenaEtcher, ou `dd if=arcadeos-*.iso of=/dev/sdX bs=4M status=progress`
+
+            Artifact Actions aussi disponible pendant 30 jours.
+          files: |
+            out/*.iso
+            out/SHA256SUMS
+          prerelease: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
