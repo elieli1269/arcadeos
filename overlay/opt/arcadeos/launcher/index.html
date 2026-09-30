@@ -37,6 +37,8 @@
       </div>
     </div>
     <div class="status">
+      <button type="button" id="btn-library">Bibliothèque</button>
+      <button type="button" id="btn-store">Arcade Store</button>
       <button type="button" id="btn-settings">Réglages</button>
       <span id="clock" class="tabular">--:--</span>
     </div>
@@ -51,8 +53,18 @@
       <span id="feat-meta" class="chip">Puzzle · intégré</span>
     </div>
     <div id="rail" class="rail"></div>
-    <footer class="hint">← → naviguer · Entrée jouer · Esc quitter un jeu</footer>
+    <footer class="hint">← → naviguer · Entrée jouer · Esc quitter · S store · <span id="lib-count">7 jeux</span></footer>
   </main>
+
+  <section id="store" class="store hidden">
+    <p class="kicker">Arcade Store</p>
+    <h2>Télécharger des jeux</h2>
+    <p class="muted">Paquets Ubuntu officiels. Un clic installe via apt puis lance le binaire.</p>
+    <input id="store-search" class="store-search" type="search" placeholder="Chercher un jeu ou un paquet (supertux, 0ad…)" />
+    <div id="store-status" class="store-status hidden"></div>
+    <div id="store-grid" class="store-grid"></div>
+    <footer class="hint">Réseau requis · apt · live overlay (session)</footer>
+  </section>
 
   <section id="settings" class="settings hidden">
     <button type="button" class="ghost" id="btn-back">Retour</button>
@@ -63,6 +75,10 @@
       <p>Utilisateur <strong>gamer</strong> · mot de passe <strong>gamer</strong></p>
       <p>Super+Return ouvre un terminal. TTY2 reste disponible.</p>
     </article>
+    <article>
+      <h3>Arcade Store</h3>
+      <p>Les jeux du store s’installent avec <code>apt-get install</code> depuis les dépôts Ubuntu, puis le binaire est lancé automatiquement. Sur live USB sans persistence, ils restent jusqu’au redémarrage.</p>
+    </article>
     <div class="actions" id="power-row"></div>
   </section>
 
@@ -71,6 +87,7 @@
   </div>
 
   <script src="games.js"></script>
+  <script src="store.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

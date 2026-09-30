@@ -13,9 +13,13 @@
   const els = {
     boot: document.getElementById("boot"),
     library: document.getElementById("library"),
+    store: document.getElementById("store"),
     settings: document.getElementById("settings"),
     game: document.getElementById("game"),
     rail: document.getElementById("rail"),
+    storeGrid: document.getElementById("store-grid"),
+    storeStatus: document.getElementById("store-status"),
+    storeSearch: document.getElementById("store-search"),
     featTitle: document.getElementById("feat-title"),
     featBlurb: document.getElementById("feat-blurb"),
     featMeta: document.getElementById("feat-meta"),
@@ -23,11 +27,14 @@
     view: document.getElementById("view-label"),
     canvas: document.getElementById("canvas"),
     power: document.getElementById("power-row"),
+    libCount: document.getElementById("lib-count"),
   };
 
   let focus = 0;
+  let storeFocus = 0;
   let screen = "boot";
   let running = null;
+  let query = "";
 
   function callNative(method, payload) {
     if (window.arcadeos && window.arcadeos.call) window.arcadeos.call(method, payload);
@@ -39,40 +46,165 @@
   tick();
   setInterval(tick, 1000);
 
+  function libraryGames() {
+    const extra = [];
+    ArcadeStore.CATALOG.forEach(function (item) {
+      if (!ArcadeStore.isInstalled(item.id)) return;
+      if (games.some(function (g) { return g.id === item.id; })) return;
+      extra.push({
+        id: item.id,
+        title: item.title,
+        genre: item.genre,
+        blurb: item.blurb,
+        native: true,
+        cmd: item.command,
+        fromStore: true,
+        pkg: item.package,
+      });
+    });
+    return games.concat(extra);
+  }
+
+  function filteredStore() {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return ArcadeStore.CATALOG;
+    return ArcadeStore.CATALOG.filter(function (item) {
+      return (
+        item.title.toLowerCase().indexOf(needle) >= 0 ||
+        item.package.toLowerCase().indexOf(needle) >= 0 ||
+        item.genre.toLowerCase().indexOf(needle) >= 0
+      );
+    });
+  }
+
   function renderRail() {
+    const list = libraryGames();
+    if (focus >= list.length) focus = 0;
     els.rail.innerHTML = "";
-    games.forEach((g, i) => {
+    list.forEach(function (g, i) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card" + (i === focus ? " focus" : "");
-      b.innerHTML = `<div class="tile"></div><strong>${g.title}</strong><span>${g.native ? "Natif · ISO" : "Arcade"}</span>`;
-      b.addEventListener("click", () => {
+      const tag = g.fromStore ? "Store · installé" : g.native ? "Natif · ISO" : "Arcade";
+      b.innerHTML = "<div class=\"tile\"></div><strong>" + g.title + "</strong><span>" + tag + "</span>";
+      b.addEventListener("click", function () {
         focus = i;
         renderFeature();
         play();
       });
-      b.addEventListener("mouseenter", () => {
+      b.addEventListener("mouseenter", function () {
         focus = i;
         renderFeature();
       });
       els.rail.appendChild(b);
     });
+    if (els.libCount) els.libCount.textContent = list.length + " jeux";
   }
 
   function renderFeature() {
-    const g = games[focus];
+    const list = libraryGames();
+    const g = list[focus] || list[0];
+    if (!g) return;
     els.featTitle.textContent = g.title;
     els.featBlurb.textContent = g.blurb;
-    els.featMeta.textContent = g.genre + (g.native ? " · natif ISO" : " · intégré");
+    els.featMeta.textContent =
+      g.genre + (g.fromStore ? " · store" : g.native ? " · natif ISO" : " · intégré");
     renderRail();
   }
+
+  function setStoreStatus(text, kind) {
+    if (!text) {
+      els.storeStatus.classList.add("hidden");
+      els.storeStatus.textContent = "";
+      return;
+    }
+    els.storeStatus.classList.remove("hidden");
+    els.storeStatus.className = "store-status " + (kind || "");
+    els.storeStatus.textContent = text;
+  }
+
+  function renderStore() {
+    const cat = filteredStore();
+    if (storeFocus >= cat.length) storeFocus = 0;
+    els.storeGrid.innerHTML = "";
+    cat.forEach(function (item, i) {
+      const installed = ArcadeStore.isInstalled(item.id);
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "store-card" + (i === storeFocus ? " focus" : "");
+      card.innerHTML =
+        "<div class=\"tile\"></div>" +
+        "<strong>" + item.title + "</strong>" +
+        "<span class=\"genre\">" + item.genre + "</span>" +
+        "<p>" + item.blurb + "</p>" +
+        "<code>apt install " + item.package + " → " + item.command + "</code>" +
+        "<span class=\"badge\">" + (installed ? "Installé · Jouer" : "Télécharger & lancer") + "</span>";
+      card.addEventListener("click", function () {
+        storeFocus = i;
+        renderStore();
+        onStoreActivate(item);
+      });
+      card.addEventListener("mouseenter", function () {
+        storeFocus = i;
+        renderStore();
+      });
+      els.storeGrid.appendChild(card);
+    });
+  }
+
+  function onStoreActivate(item) {
+    if (ArcadeStore.isBusy()) return;
+    if (ArcadeStore.isInstalled(item.id)) {
+      ArcadeStore.launch(item);
+      setStoreStatus("Lancement de " + item.title + "…", "ok");
+      return;
+    }
+    setStoreStatus("Téléchargement de " + item.title + " (paquet " + item.package + ")… puis lancement auto.", "busy");
+    ArcadeStore.installAndRun(item);
+    renderStore();
+  }
+
+  window.__storeDone = function (result) {
+    ArcadeStore.setBusy(false);
+    if (!result) return;
+    if (result.ok) {
+      var list = ArcadeStore.CATALOG.filter(function (c) {
+        return ArcadeStore.isInstalled(c.id) || c.id === result.id;
+      }).map(function (c) {
+        return c.id;
+      });
+      if (list.indexOf(result.id) < 0) list.push(result.id);
+      ArcadeStore.refreshInstalled(list);
+      setStoreStatus(result.message || "Installé et lancé.", "ok");
+    } else {
+      setStoreStatus(result.error || "Échec de l'installation.", "err");
+    }
+    renderStore();
+    renderFeature();
+    ArcadeStore.requestStatus();
+  };
+
+  window.__storeStatus = function (payload) {
+    if (payload && payload.installed) {
+      ArcadeStore.refreshInstalled(payload.installed);
+      renderStore();
+      renderFeature();
+    }
+  };
 
   function show(name) {
     screen = name;
     els.library.classList.toggle("hidden", name !== "library");
+    els.store.classList.toggle("hidden", name !== "store");
     els.settings.classList.toggle("hidden", name !== "settings");
     els.game.classList.toggle("hidden", name !== "game");
-    els.view.textContent = name === "settings" ? "Système" : name === "game" ? "Jeu" : "Bibliothèque";
+    els.view.textContent =
+      name === "settings" ? "Système" : name === "game" ? "Jeu" : name === "store" ? "Arcade Store" : "Bibliothèque";
+    if (name === "store") {
+      renderStore();
+      ArcadeStore.requestStatus();
+    }
+    if (name === "library") renderFeature();
   }
 
   function exitBoot() {
@@ -81,8 +213,10 @@
   }
 
   function play() {
-    const g = games[focus];
-    if (g.native) {
+    const list = libraryGames();
+    const g = list[focus];
+    if (!g) return;
+    if (g.native || g.fromStore) {
       if (native && g.cmd) {
         callNative("launch", g.cmd);
         return;
@@ -100,12 +234,17 @@
   }
 
   document.getElementById("btn-play").addEventListener("click", play);
-  document.getElementById("btn-settings").addEventListener("click", function () {
-    show("settings");
-  });
-  document.getElementById("btn-back").addEventListener("click", function () {
-    show("library");
-  });
+  document.getElementById("btn-settings").addEventListener("click", function () { show("settings"); });
+  document.getElementById("btn-store").addEventListener("click", function () { show("store"); });
+  document.getElementById("btn-library").addEventListener("click", function () { show("library"); });
+  document.getElementById("btn-back").addEventListener("click", function () { show("library"); });
+  if (els.storeSearch) {
+    els.storeSearch.addEventListener("input", function (e) {
+      query = e.target.value;
+      storeFocus = 0;
+      renderStore();
+    });
+  }
   els.boot.addEventListener("click", exitBoot);
   setTimeout(exitBoot, 2200);
 
@@ -124,21 +263,42 @@
       exitBoot();
       return;
     }
+    if (e.target && e.target.id === "store-search") {
+      if (e.key === "Escape") show("library");
+      return;
+    }
     if (screen === "library") {
+      const list = libraryGames();
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
-        focus = (focus + 1) % games.length;
+        focus = (focus + 1) % list.length;
         renderFeature();
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
-        focus = (focus - 1 + games.length) % games.length;
+        focus = (focus - 1 + list.length) % list.length;
         renderFeature();
       } else if (e.key === "Enter") play();
-      else if (e.key === "s" || e.key === "S") show("settings");
+      else if (e.key === "s" || e.key === "S") show("store");
+    } else if (screen === "store") {
+      const cat = filteredStore();
+      const n = cat.length;
+      if (!n) return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        storeFocus = (storeFocus + 1) % n;
+        renderStore();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        storeFocus = (storeFocus - 1 + n) % n;
+        renderStore();
+      } else if (e.key === "Enter") {
+        onStoreActivate(cat[storeFocus]);
+      } else if (e.key === "Escape") show("library");
     } else if (screen === "settings" && e.key === "Escape") {
       show("library");
     }
   });
 
   renderFeature();
+  if (native) ArcadeStore.requestStatus();
 })();

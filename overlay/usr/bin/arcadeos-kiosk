@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""ArcadeOS kiosk — fullscreen WebKitGTK launcher. No desktop chrome."""
+"""ArcadeOS kiosk — WebKitGTK + Arcade Store (apt install then run)."""
 import json
 import os
 import shutil
 import subprocess
 import sys
+import threading
 
 gi_ok = True
 try:
@@ -27,6 +28,61 @@ COMMANDS = {
     "lbreakout2": ["lbreakout2"],
     "terminal": ["foot"],
     "foot": ["foot"],
+    "supertux2": ["supertux2"],
+    "supertuxkart": ["supertuxkart"],
+    "teeworlds": ["teeworlds"],
+    "minetest": ["minetest"],
+    "0ad": ["0ad"],
+    "wesnoth": ["wesnoth"],
+    "warzone2100": ["warzone2100"],
+    "freeciv-gtk3": ["freeciv-gtk3"],
+    "widelands": ["widelands"],
+    "megaglest": ["megaglest"],
+    "lincity-ng": ["lincity-ng"],
+    "armagetronad": ["armagetronad"],
+    "etr": ["etr"],
+    "xmoto": ["xmoto"],
+    "trigger-rally": ["trigger-rally"],
+    "tuxfootball": ["tuxfootball"],
+    "chromium-bsu": ["chromium-bsu"],
+    "powermanga": ["powermanga"],
+    "blobwars": ["blobwars"],
+    "astromenace": ["astromenace"],
+    "openarena": ["openarena"],
+    "xonotic": ["xonotic"],
+    "redeclipse": ["redeclipse"],
+    "bzflag": ["bzflag"],
+    "naev": ["naev"],
+    "endless-sky": ["endless-sky"],
+    "pioneer": ["pioneer"],
+    "hedgewars": ["hedgewars"],
+    "warmux": ["warmux"],
+    "atanks": ["atanks"],
+    "enigma": ["enigma"],
+    "frozen-bubble": ["frozen-bubble"],
+    "ltris": ["ltris"],
+    "lmarbles": ["lmarbles"],
+    "atomix": ["atomix"],
+    "berusky": ["berusky"],
+    "mirrormagic": ["mirrormagic"],
+    "gweled": ["gweled"],
+    "quadrapassel": ["quadrapassel"],
+    "gnome-mahjongg": ["gnome-mahjongg"],
+    "sol": ["sol"],
+    "pychess": ["pychess"],
+    "vitetris": ["vitetris"],
+    "moon-buggy": ["moon-buggy"],
+    "nethack": ["nethack"],
+    "flare": ["flare"],
+    "manaplus": ["manaplus"],
+    "scummvm": ["scummvm"],
+    "chocolate-doom": ["chocolate-doom"],
+    "mame": ["mame"],
+    "retroarch": ["retroarch"],
+    "kobo-deluxe": ["kobo-deluxe"],
+    "tecnoballz": ["tecnoballz"],
+    "open-invaders": ["open-invaders"],
+    "liquidwar": ["liquidwar"],
 }
 
 
@@ -56,6 +112,45 @@ def extract_payload(result):
         return ""
 
 
+def safe_pkg(name):
+    if not name or not isinstance(name, str):
+        return None
+    name = name.strip()
+    if not name or len(name) > 64:
+        return None
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+-~")
+    if any(c not in allowed for c in name):
+        return None
+    return name
+
+
+def find_binary(pkg, preferred):
+    argv = which_cmd(preferred) if preferred else None
+    if argv:
+        return argv
+    path = shutil.which(preferred) if preferred else None
+    if path:
+        return [path]
+    try:
+        out = subprocess.check_output(["dpkg", "-L", pkg], text=True, timeout=20)
+    except Exception:
+        return None
+    candidates = []
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if not (line.startswith("/usr/games/") or line.startswith("/usr/bin/")):
+            continue
+        if "." in os.path.basename(line) and not os.path.basename(line).endswith(".sh"):
+            continue
+        if os.path.isfile(line) and os.access(line, os.X_OK):
+            candidates.append(line)
+    if not candidates:
+        return None
+    return [candidates[0]]
+
+
 class Kiosk(Gtk.Window):
     def __init__(self):
         super().__init__(title="ArcadeOS")
@@ -64,6 +159,7 @@ class Kiosk(Gtk.Window):
         self.fullscreen()
         self.connect("destroy", Gtk.main_quit)
         self.connect("key-press-event", self.on_key)
+        self._install_lock = threading.Lock()
 
         settings = WebKit2.Settings()
         for name, value in (
@@ -132,11 +228,110 @@ class Kiosk(Gtk.Window):
     def on_key(self, _w, event):
         if event.keyval == Gdk.KEY_F12:
             try:
-                insp = WebKit2.WebInspector
                 self.view.get_inspector().show()
             except Exception:
                 pass
         return False
+
+    def eval_js(self, script):
+        def _run():
+            try:
+                self.view.evaluate_javascript(script, -1, None, None, None, None, None)
+            except TypeError:
+                try:
+                    self.view.run_javascript(script, None, None, None)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            return False
+
+        GLib.idle_add(_run)
+
+    def notify_store_done(self, payload):
+        self.eval_js(
+            "window.__storeDone && window.__storeDone(" + json.dumps(payload) + ");"
+        )
+
+    def notify_store_status(self, installed_ids):
+        self.eval_js(
+            "window.__storeStatus && window.__storeStatus("
+            + json.dumps({"installed": installed_ids})
+            + ");"
+        )
+
+    def do_install(self, item_id, package, command):
+        pkg = safe_pkg(package)
+        if not pkg:
+            self.notify_store_done(
+                {"ok": False, "id": item_id, "error": "Nom de paquet invalide."}
+            )
+            return
+        env = os.environ.copy()
+        env["DEBIAN_FRONTEND"] = "noninteractive"
+        try:
+            subprocess.run(
+                ["sudo", "-n", "apt-get", "update", "-qq"],
+                capture_output=True,
+                text=True,
+                timeout=180,
+                env=env,
+            )
+            proc = subprocess.run(
+                [
+                    "sudo",
+                    "-n",
+                    "apt-get",
+                    "install",
+                    "-y",
+                    "--no-install-recommends",
+                    pkg,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=900,
+                env=env,
+            )
+            if proc.returncode != 0:
+                err = (proc.stderr or proc.stdout or "apt-get failed").strip()
+                self.notify_store_done(
+                    {
+                        "ok": False,
+                        "id": item_id,
+                        "error": err[-400:] if err else "Installation échouée.",
+                    }
+                )
+                return
+        except subprocess.TimeoutExpired:
+            self.notify_store_done(
+                {"ok": False, "id": item_id, "error": "Délai dépassé (apt)."}
+            )
+            return
+        except Exception as e:
+            self.notify_store_done({"ok": False, "id": item_id, "error": str(e)})
+            return
+
+        argv = find_binary(pkg, command)
+        if argv:
+            try:
+                subprocess.Popen(argv, cwd=os.path.expanduser("~"))
+            except Exception:
+                pass
+            self.notify_store_done(
+                {
+                    "ok": True,
+                    "id": item_id,
+                    "message": pkg + " installé et lancé.",
+                }
+            )
+        else:
+            self.notify_store_done(
+                {
+                    "ok": True,
+                    "id": item_id,
+                    "message": pkg + " installé (binaire non trouvé pour lancement auto).",
+                }
+            )
 
     def on_msg(self, _manager, result):
         raw = extract_payload(result)
@@ -146,8 +341,12 @@ class Kiosk(Gtk.Window):
             msg = {"method": raw, "payload": None}
         method = msg.get("method")
         payload = msg.get("payload")
+
         if method == "launch" and payload:
             argv = which_cmd(str(payload))
+            if not argv:
+                path = shutil.which(str(payload))
+                argv = [path] if path else None
             if argv:
                 subprocess.Popen(argv, cwd=os.path.expanduser("~"))
         elif method == "poweroff":
@@ -158,6 +357,40 @@ class Kiosk(Gtk.Window):
             argv = which_cmd("foot")
             if argv:
                 subprocess.Popen(argv)
+        elif method == "store_status":
+            items = payload.get("items") if isinstance(payload, dict) else None
+            installed = []
+            if isinstance(items, list):
+                for it in items:
+                    if not isinstance(it, dict):
+                        continue
+                    cmd = it.get("command") or ""
+                    iid = it.get("id") or cmd
+                    pkg = it.get("package") or ""
+                    if (cmd and shutil.which(cmd)) or (pkg and shutil.which(pkg)):
+                        installed.append(iid)
+            self.notify_store_status(installed)
+        elif method == "install" and isinstance(payload, dict):
+            item_id = payload.get("id") or ""
+            package = payload.get("package") or ""
+            command = payload.get("command") or package
+
+            def worker():
+                if not self._install_lock.acquire(blocking=False):
+                    self.notify_store_done(
+                        {
+                            "ok": False,
+                            "id": item_id,
+                            "error": "Une installation est déjà en cours.",
+                        }
+                    )
+                    return
+                try:
+                    self.do_install(item_id, package, command)
+                finally:
+                    self._install_lock.release()
+
+            threading.Thread(target=worker, daemon=True).start()
 
 
 def main():
