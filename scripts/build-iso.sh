@@ -9,8 +9,14 @@ CHROOT="$WORK/chroot"
 ISO="$WORK/iso"
 VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION" 2>/dev/null || echo 1.0.0)"
 LABEL="ARCADEOS"
-MIRROR="${UBUNTU_MIRROR:-http://azure.archive.ubuntu.com/ubuntu}"
+MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu}"
 RELEASE="${UBUNTU_RELEASE:-noble}"
+MIRRORS=(
+  "$MIRROR"
+  "http://archive.ubuntu.com/ubuntu"
+  "http://azure.archive.ubuntu.com/ubuntu"
+  "http://security.ubuntu.com/ubuntu"
+)
 
 log() { printf '[arcadeos] %s\n' "$*"; }
 die() { printf '[arcadeos] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -43,10 +49,22 @@ command -v grub-mkrescue >/dev/null || die "grub-mkrescue missing (grub-common /
 rm -rf "$WORK"
 mkdir -p "$CHROOT" "$ISO/live" "$ISO/boot/grub" "$OUT"
 
-log "debootstrap $RELEASE minbase"
-debootstrap --arch=amd64 --variant=minbase \
-  --include=ca-certificates,systemd-sysv,dbus,sudo \
-  "$RELEASE" "$CHROOT" "$MIRROR"
+bootstrapped=0
+for m in "${MIRRORS[@]}"; do
+  [[ -n "$m" ]] || continue
+  log "debootstrap $RELEASE minbase ($m)"
+  rm -rf "$CHROOT"
+  mkdir -p "$CHROOT" "$ISO/live" "$ISO/boot/grub" "$OUT"
+  if debootstrap --verbose --arch=amd64 --variant=minbase \
+      --include=ca-certificates,systemd-sysv,dbus,sudo \
+      "$RELEASE" "$CHROOT" "$m"; then
+    MIRROR="$m"
+    bootstrapped=1
+    break
+  fi
+  log "debootstrap failed on $m — next mirror"
+done
+[[ "$bootstrapped" -eq 1 ]] || die "debootstrap failed on all mirrors"
 
 log "bind mounts"
 mkdir -p "$CHROOT/dev/pts" "$CHROOT/proc" "$CHROOT/sys" "$CHROOT/run"
@@ -77,6 +95,11 @@ EOF
 chmod +x "$CHROOT/usr/sbin/policy-rc.d"
 
 cp /etc/resolv.conf "$CHROOT/etc/resolv.conf"
+cat > "$CHROOT/etc/apt/apt.conf.d/80retries" <<'EOF'
+Acquire::Retries "5";
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+EOF
 
 log "install base + kiosk + games"
 run_chroot apt-get update
