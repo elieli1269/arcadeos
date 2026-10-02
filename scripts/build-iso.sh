@@ -115,8 +115,15 @@ run_chroot apt-get install -y --no-install-recommends \
   policykit-1 pkexec dbus-user-session libpam-systemd \
   fonts-noto-core fonts-noto-mono \
   neverball pingus lbreakout2 \
-  nano less pciutils usbutils \
+  nano less pciutils usbutils util-linux mount \
   ${EXTRA_PACKAGES:-}
+
+# Newer kernel for recent NVIDIA (nouveau/NVK). Keep generic if HWE is missing.
+if run_chroot apt-get install -y --no-install-recommends linux-image-generic-hwe-24.04; then
+  log "HWE kernel installed"
+else
+  log "HWE kernel unavailable — keeping linux-image-generic"
+fi
 
 run_chroot apt-get clean
 rm -rf "$CHROOT/var/cache/apt/archives/"*
@@ -169,6 +176,7 @@ if [[ -d "$ROOT/overlay" ]]; then
   rsync -a "$ROOT/overlay/" "$CHROOT/"
 fi
 chmod +x "$CHROOT/usr/bin/"arcadeos-* 2>/dev/null || true
+chmod +x "$CHROOT/usr/lib/arcadeos/"* 2>/dev/null || true
 
 # greetd + sway kiosk
 mkdir -p "$CHROOT/etc/greetd" "$CHROOT/etc/arcadeos" "$CHROOT/etc/polkit-1/rules.d"
@@ -233,6 +241,35 @@ polkit.addRule(function(action, subject) {
 });
 EOF
 
+log "live USB hardening — never touch the internal HDD"
+mkdir -p \
+  "$CHROOT/etc/systemd/system-generators" \
+  "$CHROOT/etc/initramfs-tools/conf.d" \
+  "$CHROOT/etc/live" \
+  "$CHROOT/usr/lib/arcadeos"
+
+# Mask generators that probe ATA/NVMe for LUKS, GPT auto-root, hibernate resume.
+ln -sfn /dev/null "$CHROOT/etc/systemd/system-generators/systemd-gpt-auto-generator"
+ln -sfn /dev/null "$CHROOT/etc/systemd/system-generators/systemd-cryptsetup-generator"
+ln -sfn /dev/null "$CHROOT/etc/systemd/system-generators/systemd-hibernate-resume-generator"
+ln -sfn /dev/null "$CHROOT/etc/systemd/system-generators/systemd-integritysetup-generator"
+
+# fstab/crypttab from overlay may be missing on a partial tree — force safe copies.
+cat > "$CHROOT/etc/fstab" <<'EOF'
+# ArcadeOS live — tmpfs only. Internal disks are never listed, never fsck'd.
+tmpfs /tmp tmpfs nosuid,nodev,mode=1777 0 0
+tmpfs /var/tmp tmpfs nosuid,nodev,mode=1777 0 0
+EOF
+: > "$CHROOT/etc/crypttab"
+echo 'RESUME=none' > "$CHROOT/etc/initramfs-tools/conf.d/resume"
+cat > "$CHROOT/etc/initramfs-tools/conf.d/arcadeos" <<'EOF'
+WAIT=12
+CRYPTSETUP=n
+EOF
+
+run_chroot systemctl enable arcadeos-disk-guard.service || true
+run_chroot systemctl mask hibernate.target hybrid-sleep.target suspend-then-hibernate.target cryptsetup.target || true
+
 log "systemd targets"
 run_chroot systemctl enable greetd || true
 run_chroot systemctl enable NetworkManager || true
@@ -274,27 +311,48 @@ printf '%s\n' "$(du -sb "$CHROOT" | cut -f1)" > "$ISO/live/filesystem.size"
 cat > "$ISO/boot/grub/grub.cfg" <<'EOF'
 insmod all_video
 insmod gfxterm
+insmod iso9660
+insmod part_gpt
+insmod part_msdos
+insmod ext2
 terminal_output gfxterm
-set timeout=2
+set timeout=6
 set default=0
 set menu_color_normal=white/black
 set menu_color_highlight=black/light-gray
 
-menuentry "ArcadeOS" {
-    search --file --set=root /live/vmlinuz
-    linux /live/vmlinuz boot=live components quiet splash username=gamer hostname=arcadeos timezone=Europe/Paris
+# RAM overlay, no swap, no LUKS, no resume from the internal disk.
+set live_safe="boot=live components username=gamer hostname=arcadeos timezone=Europe/Paris nopersistent noswap noluks nolvm nodmraid live-media-path=/live live-media-timeout=15 noresume resume=none systemd.gpt_auto=0 rd.luks=0 rd.lvm=0 rd.md=0 rd.dm=0 fsck.mode=skip fsck.repair=no"
+
+menuentry "ArcadeOS — clé USB (disque dur intact)" {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_safe quiet splash
     initrd /live/initrd.img
 }
 
-menuentry "ArcadeOS (safe graphics)" {
-    search --file --set=root /live/vmlinuz
-    linux /live/vmlinuz boot=live components username=gamer nomodeset
+menuentry "ArcadeOS — graphismes sûrs (NVIDIA / sans GPU)" {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_safe nomodeset nouveau.modeset=0 nvidia.modeset=0 i915.modeset=0 amdgpu.modeset=0 radeon.modeset=0
     initrd /live/initrd.img
 }
 
-menuentry "ArcadeOS (copy to RAM)" {
-    search --file --set=root /live/vmlinuz
-    linux /live/vmlinuz boot=live components quiet splash username=gamer toram
+menuentry "ArcadeOS — copie en RAM (tu peux retirer la clé)" {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_safe toram quiet splash
+    initrd /live/initrd.img
+}
+
+menuentry "ArcadeOS — USB strict (ignore les disques internes)" {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_safe live-media=removable-usb quiet splash
     initrd /live/initrd.img
 }
 EOF

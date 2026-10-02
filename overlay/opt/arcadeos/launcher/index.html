@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ArcadeOS</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -63,7 +63,7 @@
     <input id="store-search" class="store-search" type="search" placeholder="Chercher un jeu ou un paquet (supertux, 0ad…)" />
     <div id="store-status" class="store-status hidden"></div>
     <div id="store-grid" class="store-grid"></div>
-    <footer class="hint">Réseau requis · apt · live overlay (session)</footer>
+    <footer class="hint">Réseau requis · apt · overlay RAM (le disque dur n’est pas utilisé)</footer>
   </section>
 
   <section id="settings" class="settings hidden">
@@ -71,16 +71,27 @@
     <h2>Système</h2>
     <p class="muted">Ubuntu 24.04 LTS · Sway kiosk · greetd auto-login</p>
     <article>
+      <h3>Clé USB — disque dur intact</h3>
+      <p>ArcadeOS est un live. Overlay en RAM. Pas de swap, pas de LUKS, pas de reprise Windows. Le disque interne n’est ni monté, ni formaté, ni utilisé.</p>
+      <p>Si le boot a échoué : au menu GRUB, choisis <strong>graphismes sûrs</strong> (NVIDIA / sans GPU) ou <strong>USB strict</strong>.</p>
+    </article>
+    <article>
       <h3>Session</h3>
       <p>Utilisateur <strong>gamer</strong> · mot de passe <strong>gamer</strong></p>
       <p>Super+Return ouvre un terminal. TTY2 reste disponible.</p>
     </article>
     <article>
       <h3>Arcade Store</h3>
-      <p>Les jeux du store s’installent avec <code>apt-get install</code> depuis les dépôts Ubuntu, puis le binaire est lancé automatiquement. Sur live USB sans persistence, ils restent jusqu’au redémarrage.</p>
+      <p>Les jeux du store s’installent avec <code>apt-get install</code> depuis les dépôts Ubuntu, puis le binaire est lancé automatiquement. Sur live USB, ils restent en RAM jusqu’au redémarrage.</p>
     </article>
     <div class="actions" id="power-row"></div>
   </section>
+
+  <nav class="dock" aria-label="Navigation">
+    <button type="button" id="dock-library" class="active">Bibliothèque</button>
+    <button type="button" id="dock-store">Store</button>
+    <button type="button" id="dock-settings">Réglages</button>
+  </nav>
 
   <div id="game" class="game hidden">
     <canvas id="canvas"></canvas>

@@ -1,0 +1,55 @@
+#!/bin/sh
+# ArcadeOS live USB: never mount, swap, resume, or fsck the internal HDD.
+# Overlay stays on tmpfs. The USB (or optical/loop) is the only allowed medium.
+set -u
+LOG=/run/arcadeos-disk-guard.log
+mkdir -p /run
+{
+  echo "=== arcadeos-disk-guard $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+
+  swapoff -a 2>/dev/null || true
+  if [ -w /sys/power/resume ]; then
+    echo "0:0" >/sys/power/resume 2>/dev/null || true
+  fi
+
+  # Drop automounts systemd/udev may have attached from internal disks.
+  # Never touch /, live mounts, overlay, or the USB that holds the squashfs.
+  for mp in /boot/efi /boot; do
+    if mountpoint -q "$mp" 2>/dev/null; then
+      echo "umount $mp"
+      umount -l "$mp" 2>/dev/null || true
+    fi
+  done
+
+  if [ -d /media ]; then
+    for mp in /media/*; do
+      [ -e "$mp" ] || continue
+      mountpoint -q "$mp" 2>/dev/null || continue
+      echo "umount $mp"
+      umount -l "$mp" 2>/dev/null || true
+    done
+  fi
+  if [ -d /mnt ]; then
+    for mp in /mnt/*; do
+      [ -e "$mp" ] || continue
+      mountpoint -q "$mp" 2>/dev/null || continue
+      echo "umount $mp"
+      umount -l "$mp" 2>/dev/null || true
+    done
+  fi
+  if [ -d /run/media ]; then
+    for mp in /run/media/* /run/media/*/*; do
+      [ -e "$mp" ] || continue
+      mountpoint -q "$mp" 2>/dev/null || continue
+      echo "umount $mp"
+      umount -l "$mp" 2>/dev/null || true
+    done
+  fi
+
+  echo "mounts after guard:"
+  findmnt -n -o SOURCE,FSTYPE,TARGET 2>/dev/null || mount
+  echo "swap:"
+  cat /proc/swaps 2>/dev/null || true
+  echo "done"
+} >>"$LOG" 2>&1
+exit 0

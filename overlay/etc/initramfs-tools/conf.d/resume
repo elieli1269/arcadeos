@@ -1,0 +1,2 @@
+# Do not resume from a swap UUID on the internal disk (USB boot hang / error).
+RESUME=none

@@ -1,0 +1,1 @@
+# ArcadeOS live — no LUKS devices. An empty crypttab prevents prompts for the HDD.

@@ -1,0 +1,15 @@
+# ArcadeOS: do not automount or present internal disks.
+# Removable USB stays usable. Live medium is already mounted by live-boot.
+
+# Hide non-USB disks from udisks / desktop automount.
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_BUS}=="ata", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_BUS}=="sata", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_BUS}=="scsi", ENV{ID_USB_DRIVER}!="usb-storage", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_BUS}=="nvme", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_BUS}=="ieee1394", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+
+# Never auto-activate swap (Windows hibernation / other Linux swap).
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="swap", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+
+# Never auto-unlock LUKS on the internal drive (the classic USB-boot password prompt).
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="crypto_LUKS", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"

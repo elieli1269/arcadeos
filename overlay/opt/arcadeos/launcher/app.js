@@ -198,6 +198,16 @@
     els.store.classList.toggle("hidden", name !== "store");
     els.settings.classList.toggle("hidden", name !== "settings");
     els.game.classList.toggle("hidden", name !== "game");
+    var dockEl = document.querySelector(".dock");
+    var topEl = document.querySelector(".top");
+    if (dockEl) dockEl.classList.toggle("hidden", name === "game");
+    if (topEl) topEl.classList.toggle("hidden", name === "game");
+    var dockLib = document.getElementById("dock-library");
+    var dockStore = document.getElementById("dock-store");
+    var dockSet = document.getElementById("dock-settings");
+    if (dockLib) dockLib.classList.toggle("active", name === "library");
+    if (dockStore) dockStore.classList.toggle("active", name === "store");
+    if (dockSet) dockSet.classList.toggle("active", name === "settings");
     els.view.textContent =
       name === "settings" ? "Système" : name === "game" ? "Jeu" : name === "store" ? "Arcade Store" : "Bibliothèque";
     if (name === "store") {
@@ -238,6 +248,12 @@
   document.getElementById("btn-store").addEventListener("click", function () { show("store"); });
   document.getElementById("btn-library").addEventListener("click", function () { show("library"); });
   document.getElementById("btn-back").addEventListener("click", function () { show("library"); });
+  var dockLibrary = document.getElementById("dock-library");
+  var dockStore = document.getElementById("dock-store");
+  var dockSettings = document.getElementById("dock-settings");
+  if (dockLibrary) dockLibrary.addEventListener("click", function () { show("library"); });
+  if (dockStore) dockStore.addEventListener("click", function () { show("store"); });
+  if (dockSettings) dockSettings.addEventListener("click", function () { show("settings"); });
   if (els.storeSearch) {
     els.storeSearch.addEventListener("input", function (e) {
       query = e.target.value;
