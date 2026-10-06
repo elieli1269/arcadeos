@@ -35,7 +35,7 @@ Le boot par défaut est un **live RAM**. ArcadeOS :
 Menu GRUB (6 s) :
 
 1. **ArcadeOS — clé USB (disque dur intact)** — défaut
-2. **graphismes sûrs** — NVIDIA récent / PC sans GPU (`nomodeset`, llvmpipe)
+2. **sans GPU (rendu CPU)** — Intel / AMD / rien du tout : llvmpipe, pas de carte graphique requise
 3. **copie en RAM** — après le chargement tu peux retirer la clé
 4. **USB strict** — ignore tout ce qui n’est pas une clé USB
 
@@ -59,13 +59,13 @@ Exemples : SuperTux (`supertux` → `supertux2`), SuperTuxKart, 0 A.D. (`0ad`), 
 
 1. Télécharge `arcadeos-*-amd64.iso` depuis [Releases](https://github.com/elieli1269/arcadeos/releases/tag/nightly)
 2. [Ventoy](https://www.ventoy.net/) (drop le fichier) ou [balenaEtcher](https://etcher.balena.io/)
-3. Ou : `sudo dd if=arcadeos-1.3.0-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
+3. Ou : `sudo dd if=arcadeos-1.3.1-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
 
 Compte : **gamer** / **gamer**. Root : `arcadeos`.
 
 Dans le BIOS : USB first, **Secure Boot off** (l’ISO n’est pas signée Microsoft).
 
-Matériel : **x86_64** (Intel / AMD). GPU optionnel — Mesa nouveau/NVK pour NVIDIA, sinon llvmpipe.
+Matériel : **x86_64** (Intel ou AMD). **Aucun GPU NVIDIA requis.** Intel intégré, AMD, ou le processeur (llvmpipe) suffisent. Si une carte NVIDIA est là, Mesa/nouveau l’utilise ; sinon ça tourne quand même.
 
 ## Build (GitHub Actions)
 
@@ -83,14 +83,14 @@ Artifact + release `nightly`. Relance manuelle : Actions → **Build ArcadeOS IS
 ```bash
 sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools rsync
 sudo ./scripts/build-iso.sh
-# → out/arcadeos-1.3.0-amd64.iso
+# → out/arcadeos-1.3.1-amd64.iso
 ```
 
 QEMU :
 
 ```bash
 qemu-system-x86_64 -m 4096 -enable-kvm -cpu host -smp 4 \
-  -cdrom out/arcadeos-1.3.0-amd64.iso -boot d -vga virtio
+  -cdrom out/arcadeos-1.3.1-amd64.iso -boot d -vga virtio
 ```
 
 ## Arborescence

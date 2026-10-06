@@ -115,10 +115,10 @@ run_chroot apt-get install -y --no-install-recommends \
   policykit-1 pkexec dbus-user-session libpam-systemd \
   fonts-noto-core fonts-noto-mono \
   neverball pingus lbreakout2 \
-  nano less pciutils usbutils util-linux mount \
+  nano less pciutils usbutils util-linux mount libpixman-1-0 \
   ${EXTRA_PACKAGES:-}
 
-# Newer kernel for recent NVIDIA (nouveau/NVK). Keep generic if HWE is missing.
+# Newer kernel for Intel / AMD / any recent GPU. Keep generic if HWE is missing.
 if run_chroot apt-get install -y --no-install-recommends linux-image-generic-hwe-24.04; then
   log "HWE kernel installed"
 else
@@ -185,7 +185,7 @@ cat > "$CHROOT/etc/greetd/config.toml" <<'EOF'
 vt = 1
 
 [default_session]
-command = "sway --config /etc/arcadeos/sway.config"
+command = "/usr/bin/arcadeos-session"
 user = "gamer"
 EOF
 
@@ -332,11 +332,11 @@ menuentry "ArcadeOS — clé USB (disque dur intact)" {
     initrd /live/initrd.img
 }
 
-menuentry "ArcadeOS — graphismes sûrs (NVIDIA / sans GPU)" {
+menuentry "ArcadeOS — sans GPU (rendu CPU)" {
     if [ ! -e /live/vmlinuz ]; then
         search --no-floppy --file --set=root /live/vmlinuz
     fi
-    linux /live/vmlinuz $live_safe nomodeset nouveau.modeset=0 nvidia.modeset=0 i915.modeset=0 amdgpu.modeset=0 radeon.modeset=0
+    linux /live/vmlinuz $live_safe nomodeset arcadeos.software=1
     initrd /live/initrd.img
 }
 

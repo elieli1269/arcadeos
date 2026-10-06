@@ -1,0 +1,36 @@
+#!/bin/sh
+# ArcadeOS session: GPU optional.
+# Intel (i915), AMD (amdgpu), any Mesa device — or CPU pixman/llvmpipe if none.
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=sway
+CONF=/etc/arcadeos/sway.config
+LOG=/tmp/arcadeos-session.log
+
+software() {
+  export WLR_RENDERER=pixman
+  export LIBGL_ALWAYS_SOFTWARE=1
+  export GALLIUM_DRIVER=llvmpipe
+  export WLR_NO_HARDWARE_CURSORS=1
+  echo "arcadeos-session: CPU renderer (no GPU required)" >>"$LOG"
+}
+
+need_software=0
+if grep -qw arcadeos.software /proc/cmdline 2>/dev/null; then
+  need_software=1
+fi
+if ! ls /dev/dri/card* >/dev/null 2>&1; then
+  need_software=1
+fi
+
+if [ "$need_software" = 1 ]; then
+  software
+  exec /usr/bin/sway --config "$CONF"
+fi
+
+# Hardware Mesa. If KMS dies on start, retry on the CPU.
+if /usr/bin/sway --config "$CONF"; then
+  exit 0
+fi
+echo "arcadeos-session: sway/GPU failed, falling back to CPU" >>"$LOG"
+software
+exec /usr/bin/sway --config "$CONF"
