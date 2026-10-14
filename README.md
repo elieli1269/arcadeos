@@ -39,9 +39,13 @@ Menu GRUB (6 s) :
 3. **copie en RAM** — après le chargement tu peux retirer la clé
 4. **USB strict** — ignore tout ce qui n’est pas une clé USB
 
-Si tu as eu une erreur au boot USB, prends **graphismes sûrs** (carte NVIDIA) ou **USB strict**.
+Si l’écran reste noir, prends **sans GPU (rendu CPU)** ou **USB strict**. Aucun GPU NVIDIA n’est requis.
 
 Flasher avec **Ventoy**, **balenaEtcher**, ou `dd`. Évite Rufus en mode « ISO » (il réécrit le système de fichiers et casse le live).
+
+## Bibliothèque
+
+Le rayon du haut, ce sont les jeux prêts (intégrés + déjà installés). En dessous, **À télécharger · les plus légers** : un clic fait `apt-get install` puis lance le binaire. Le store complet trie aussi par taille (filtre Plus légers).
 
 ## Arcade Store
 
@@ -59,7 +63,7 @@ Exemples : SuperTux (`supertux` → `supertux2`), SuperTuxKart, 0 A.D. (`0ad`), 
 
 1. Télécharge `arcadeos-*-amd64.iso` depuis [Releases](https://github.com/elieli1269/arcadeos/releases/tag/nightly)
 2. [Ventoy](https://www.ventoy.net/) (drop le fichier) ou [balenaEtcher](https://etcher.balena.io/)
-3. Ou : `sudo dd if=arcadeos-1.3.1-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
+3. Ou : `sudo dd if=arcadeos-1.4.0-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
 
 Compte : **gamer** / **gamer**. Root : `arcadeos`.
 
@@ -83,14 +87,14 @@ Artifact + release `nightly`. Relance manuelle : Actions → **Build ArcadeOS IS
 ```bash
 sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools rsync
 sudo ./scripts/build-iso.sh
-# → out/arcadeos-1.3.1-amd64.iso
+# → out/arcadeos-1.4.0-amd64.iso
 ```
 
 QEMU :
 
 ```bash
 qemu-system-x86_64 -m 4096 -enable-kvm -cpu host -smp 4 \
-  -cdrom out/arcadeos-1.3.1-amd64.iso -boot d -vga virtio
+  -cdrom out/arcadeos-1.4.0-amd64.iso -boot d -vga virtio
 ```
 
 ## Arborescence

@@ -94,9 +94,14 @@ input, select, textarea { font-size: 16px; }
 }
 .primary:active { transform: scale(0.98); }
 .rail {
-  display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-top: auto;
+  display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-top: 8px;
   scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
 }
+.shelf-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 20px; gap: 12px;
+}
+.shelf-head .ghost { height: 36px; padding: 0 10px; }
 .card {
   flex: 0 0 min(160px, 42vw); text-align: left; border: 1px solid var(--border); background: var(--surface);
   border-radius: var(--radius-lg); padding: 16px; color: inherit; scroll-snap-align: start;

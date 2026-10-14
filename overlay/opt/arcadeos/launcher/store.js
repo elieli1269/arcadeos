@@ -56,7 +56,37 @@ window.ArcadeStore = (function () {
     { id: "kobodeluxe", title: "Kobo Deluxe", genre: "Shoot'em up", blurb: "XKobo, vagues, bouclier.", package: "kobodeluxe", command: "kobo-deluxe" },
     { id: "tecnoballz", title: "TecnoballZ", genre: "Arcade", blurb: "Casse-briques arcade.", package: "tecnoballz", command: "tecnoballz" },
     { id: "open-invaders", title: "Open Invaders", genre: "Arcade", blurb: "Space Invaders libre.", package: "open-invaders", command: "open-invaders" },
-    { id: "liquidwar", title: "Liquid War", genre: "Arcade", blurb: "Liquide qui mange l’adversaire.", package: "liquidwar", command: "liquidwar" },
+    { id: "liquidwar", title: "Liquid War", genre: "Arcade", blurb: "Liquide qui mange l’adversaire.", package: "liquidwar", command: "liquidwar", size: "4 Mo" },
+    { id: "openttd", title: "OpenTTD", genre: "Transport", blurb: "Réseaux ferroviaires, camions, avions.", package: "openttd", command: "openttd", size: "40 Mo" },
+    { id: "simutrans", title: "Simutrans", genre: "Transport", blurb: "Simulation de transport.", package: "simutrans", command: "simutrans", size: "50 Mo" },
+    { id: "freecol", title: "FreeCol", genre: "Stratégie", blurb: "Colonisation, tour par tour.", package: "freecol", command: "freecol", size: "60 Mo" },
+    { id: "openrct2", title: "OpenRCT2", genre: "Simulation", blurb: "Parcs d’attractions.", package: "openrct2", command: "openrct2", size: "80 Mo" },
+    { id: "opencity", title: "OpenCity", genre: "Simulation", blurb: "Ville en 3D.", package: "opencity", command: "opencity", size: "25 Mo" },
+    { id: "assaultcube", title: "AssaultCube", genre: "FPS", blurb: "FPS léger, arènes.", package: "assaultcube", command: "assaultcube", size: "50 Mo" },
+    { id: "dsda-doom", title: "DSDA-Doom", genre: "FPS", blurb: "Port Doom. Freedoom conseillé.", package: "dsda-doom", command: "dsda-doom", size: "8 Mo" },
+    { id: "gltron", title: "GLTron", genre: "Course", blurb: "Murs de lumière, style Tron.", package: "gltron", command: "gltron", size: "3 Mo" },
+    { id: "torcs", title: "TORCS", genre: "Course", blurb: "Course automobile.", package: "torcs", command: "torcs", size: "300 Mo" },
+    { id: "hex-a-hop", title: "Hex-a-hop", genre: "Puzzle", blurb: "Tuiles hexagonales.", package: "hex-a-hop", command: "hex-a-hop", size: "4 Mo" },
+    { id: "kapman", title: "Kapman", genre: "Arcade", blurb: "Labyrinthe, fantômes.", package: "kapman", command: "kapman", size: "3 Mo" },
+    { id: "katomic", title: "KAtomic", genre: "Puzzle", blurb: "Atomes, style Sokoban.", package: "katomic", command: "katomic", size: "2 Mo" },
+    { id: "kblocks", title: "KBlocks", genre: "Puzzle", blurb: "Tetris KDE.", package: "kblocks", command: "kblocks", size: "2 Mo" },
+    { id: "kbreakout", title: "KBreakOut", genre: "Arcade", blurb: "Casse-briques KDE.", package: "kbreakout", command: "kbreakout", size: "2 Mo" },
+    { id: "bomber", title: "Bomber", genre: "Arcade", blurb: "Bombes, labyrinthe.", package: "bomber", command: "bomber", size: "3 Mo" },
+    { id: "granatier", title: "Granatier", genre: "Arcade", blurb: "Bombes, arènes.", package: "granatier", command: "granatier", size: "3 Mo" },
+    { id: "kmines", title: "KMines", genre: "Puzzle", blurb: "Démineur.", package: "kmines", command: "kmines", size: "2 Mo" },
+    { id: "ksudoku", title: "KSudoku", genre: "Puzzle", blurb: "Sudoku.", package: "ksudoku", command: "ksudoku", size: "2 Mo" },
+    { id: "kpat", title: "KPatience", genre: "Cartes", blurb: "Solitaires KDE.", package: "kpat", command: "kpat", size: "4 Mo" },
+    { id: "xboard", title: "XBoard", genre: "Plateau", blurb: "Échecs.", package: "xboard", command: "xboard", size: "3 Mo" },
+    { id: "foobillardplus", title: "FooBillard++", genre: "Sport", blurb: "Billard 3D.", package: "foobillardplus", command: "foobillardplus", size: "15 Mo" },
+    { id: "billard-gl", title: "BillardGL", genre: "Sport", blurb: "Billard OpenGL.", package: "billard-gl", command: "billard-gl", size: "6 Mo" },
+    { id: "abuse", title: "Abuse", genre: "Action", blurb: "Run-and-gun 2D.", package: "abuse", command: "abuse", size: "8 Mo" },
+    { id: "ri-li", title: "Ri-li", genre: "Arcade", blurb: "Train de bois.", package: "ri-li", command: "ri-li", size: "6 Mo" },
+    { id: "barrage", title: "Barrage", genre: "Shoot'em up", blurb: "Défense, vagues.", package: "barrage", command: "barrage", size: "2 Mo" },
+    { id: "alex4", title: "Alex the Allegator 4", genre: "Plateforme", blurb: "Plateforme rétro.", package: "alex4", command: "alex4", size: "2 Mo" },
+    { id: "airstrike", title: "Airstrike", genre: "Shoot'em up", blurb: "Avions 2D.", package: "airstrike", command: "airstrike", size: "1 Mo" },
+    { id: "bastet", title: "Bastet", genre: "Puzzle", blurb: "Tetris cruel.", package: "bastet", command: "bastet", size: "0,2 Mo" },
+    { id: "gtkballs", title: "GtkBalls", genre: "Puzzle", blurb: "Lignes de billes.", package: "gtkballs", command: "gtkballs", size: "1 Mo" },
+    { id: "7kaa", title: "Seven Kingdoms", genre: "Stratégie", blurb: "RTS, sept royaumes.", package: "7kaa", command: "7kaa", size: "40 Mo" },
   ];
 
   const installed = {};
@@ -130,6 +160,45 @@ window.ArcadeStore = (function () {
     return null;
   }
 
+  function sizeMb(size) {
+    if (!size) return 9999;
+    var n = parseFloat(String(size).replace(",", "."));
+    if (isNaN(n)) return 9999;
+    if (/go/i.test(size)) return n * 1024;
+    return n;
+  }
+
+  var KNOWN = {
+    vitetris: "0,2 Mo",
+    "moon-buggy": "0,1 Mo",
+    atomix: "1 Mo",
+    ltris: "2 Mo",
+    lmarbles: "2 Mo",
+    gweled: "2 Mo",
+    mirrormagic: "4 Mo",
+    "chromium-bsu": "6 Mo",
+    armagetronad: "8 Mo",
+    atanks: "8 Mo",
+    tuxfootball: "8 Mo",
+    kobodeluxe: "2 Mo",
+    tecnoballz: "5 Mo",
+    "open-invaders": "3 Mo",
+  };
+
+  function sizeOf(item) {
+    return item.size || KNOWN[item.id] || "";
+  }
+
+  function lightPending() {
+    return CATALOG.filter(function (item) {
+      return !isInstalled(item.id) && sizeMb(sizeOf(item)) <= 8;
+    })
+      .sort(function (a, b) {
+        return sizeMb(sizeOf(a)) - sizeMb(sizeOf(b));
+      })
+      .slice(0, 16);
+  }
+
   return {
     CATALOG: CATALOG,
     installAndRun: installAndRun,
@@ -140,5 +209,7 @@ window.ArcadeStore = (function () {
     setBusy: setBusy,
     isBusy: isBusy,
     byId: byId,
+    lightPending: lightPending,
+    sizeOf: sizeOf,
   };
 })();

@@ -17,6 +17,8 @@
     settings: document.getElementById("settings"),
     game: document.getElementById("game"),
     rail: document.getElementById("rail"),
+    pending: document.getElementById("pending"),
+    libStatus: document.getElementById("lib-status"),
     storeGrid: document.getElementById("store-grid"),
     storeStatus: document.getElementById("store-status"),
     storeSearch: document.getElementById("store-search"),
@@ -98,7 +100,38 @@
       });
       els.rail.appendChild(b);
     });
-    if (els.libCount) els.libCount.textContent = list.length + " jeux";
+    if (els.libCount) els.libCount.textContent = list.length + " jeux prêts · " + ArcadeStore.CATALOG.length + " au store";
+    renderPending();
+  }
+
+  function renderPending() {
+    if (!els.pending) return;
+    var list = ArcadeStore.lightPending();
+    els.pending.innerHTML = "";
+    list.forEach(function (item) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "card";
+      var size = ArcadeStore.sizeOf(item) || item.package;
+      b.innerHTML = "<div class=\"tile\"></div><strong>" + item.title + "</strong><span>" + size + " · " + item.package + "</span>";
+      b.addEventListener("click", function () {
+        setLibStatus("Téléchargement de " + item.title + " (" + item.package + ")… puis lancement.", "busy");
+        ArcadeStore.installAndRun(item);
+      });
+      els.pending.appendChild(b);
+    });
+  }
+
+  function setLibStatus(text, kind) {
+    if (!els.libStatus) return;
+    if (!text) {
+      els.libStatus.classList.add("hidden");
+      els.libStatus.textContent = "";
+      return;
+    }
+    els.libStatus.classList.remove("hidden");
+    els.libStatus.className = "store-status " + (kind || "");
+    els.libStatus.textContent = text;
   }
 
   function renderFeature() {
@@ -176,8 +209,17 @@
       if (list.indexOf(result.id) < 0) list.push(result.id);
       ArcadeStore.refreshInstalled(list);
       setStoreStatus(result.message || "Installé et lancé.", "ok");
+      setLibStatus(result.message || "Installé et lancé.", "ok");
+      var listNow = libraryGames();
+      for (var i = 0; i < listNow.length; i++) {
+        if (listNow[i].id === result.id) {
+          focus = i;
+          break;
+        }
+      }
     } else {
       setStoreStatus(result.error || "Échec de l'installation.", "err");
+      setLibStatus(result.error || "Échec de l'installation.", "err");
     }
     renderStore();
     renderFeature();
@@ -246,6 +288,8 @@
   document.getElementById("btn-play").addEventListener("click", play);
   document.getElementById("btn-settings").addEventListener("click", function () { show("settings"); });
   document.getElementById("btn-store").addEventListener("click", function () { show("store"); });
+  var allStore = document.getElementById("btn-all-store");
+  if (allStore) allStore.addEventListener("click", function () { show("store"); });
   document.getElementById("btn-library").addEventListener("click", function () { show("library"); });
   document.getElementById("btn-back").addEventListener("click", function () { show("library"); });
   var dockLibrary = document.getElementById("dock-library");
