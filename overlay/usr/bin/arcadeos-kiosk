@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import sys
 import threading
+import urllib.error
+import urllib.request
 
 gi_ok = True
 try:
@@ -84,6 +86,105 @@ COMMANDS = {
     "open-invaders": ["open-invaders"],
     "liquidwar": ["liquidwar"],
 }
+
+
+def read_groq_key():
+    for path in ("/etc/arcadeos/groq.key",):
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                key = handle.read().strip()
+                if key:
+                    return key
+        except OSError:
+            continue
+    return os.environ.get("GROQ_API_KEY", "").strip()
+
+
+def groq_suggest(prompt, catalog):
+    prompt = str(prompt or "").strip()[:200]
+    if len(prompt) < 2:
+        return {"ok": False, "error": "Dis en quelques mots ce que tu veux jouer."}
+    rows = []
+    ids = set()
+    if isinstance(catalog, list):
+        for item in catalog[:120]:
+            if not isinstance(item, dict):
+                continue
+            iid = str(item.get("id") or "")
+            if not iid or iid in ids:
+                continue
+            ids.add(iid)
+            rows.append(
+                "%s | %s | %s | %s"
+                % (iid, item.get("title") or iid, item.get("genre") or "", item.get("size") or "")
+            )
+    key = read_groq_key()
+    if key and rows:
+        payload = json.dumps(
+            {
+                "model": "openai/gpt-oss-20b",
+                "temperature": 0.2,
+                "max_tokens": 220,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Tu es l’aide d’ArcadeOS. Tu choisis UN seul jeu dans la liste. Réponds uniquement avec un JSON {\"id\":\"…\",\"reason\":\"une phrase courte en français\"}. L’id doit être copié tel quel. Préfère un jeu léger si on parle de PC sans GPU.",
+                    },
+                    {
+                        "role": "user",
+                        "content": "Liste:\n" + "\n".join(rows) + "\n\nDemande: " + prompt,
+                    },
+                ],
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + key,
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                body = json.loads(resp.read().decode("utf-8", "replace"))
+            text = (
+                body.get("choices", [{}])[0]
+                .get("message", {})
+                .get("content", "")
+            )
+            start = text.find("{")
+            end = text.rfind("}")
+            if start >= 0 and end > start:
+                parsed = json.loads(text[start : end + 1])
+                iid = str(parsed.get("id") or "")
+                if iid in ids:
+                    return {
+                        "ok": True,
+                        "id": iid,
+                        "reason": str(parsed.get("reason") or "Ça correspond.")[:180],
+                    }
+        except Exception:
+            pass
+    low = prompt.lower()
+    def hit(words, iid, reason):
+        if iid in ids and any(w in low for w in words):
+            return {"ok": True, "id": iid, "reason": reason}
+        return None
+    for candidate in (
+        hit(("léger", "leger", "sans gpu", "petit", "cpu"), "moon-buggy", "Léger, ça tourne sans carte graphique."),
+        hit(("course", "kart", "voiture", "moto"), "supertuxkart", "Une course arcade."),
+        hit(("puzzle", "tetris", "casse"), "stack", "Un puzzle déjà dans la bibliothèque."),
+        hit(("stratég", "strateg", "guerre"), "wesnoth", "De la stratégie au tour par tour."),
+        hit(("tir", "shoot", "fps", "espace"), "chromium-bsu", "Un shoot léger."),
+    ):
+        if candidate:
+            return candidate
+    if "stack" in ids:
+        return {"ok": True, "id": "stack", "reason": "Un jeu déjà prêt."}
+    if ids:
+        return {"ok": True, "id": next(iter(ids)), "reason": "Un jeu du catalogue."}
+    return {"ok": False, "error": "Catalogue vide."}
 
 
 def which_cmd(name):
@@ -370,6 +471,17 @@ class Kiosk(Gtk.Window):
                     if (cmd and shutil.which(cmd)) or (pkg and shutil.which(pkg)):
                         installed.append(iid)
             self.notify_store_status(installed)
+        elif method == "suggest" and isinstance(payload, dict):
+            prompt = payload.get("prompt") or ""
+            catalog = payload.get("catalog")
+
+            def worker():
+                result = groq_suggest(prompt, catalog)
+                self.eval_js(
+                    "window.__aiDone && window.__aiDone(" + json.dumps(result) + ");"
+                )
+
+            threading.Thread(target=worker, daemon=True).start()
         elif method == "install" and isinstance(payload, dict):
             item_id = payload.get("id") or ""
             package = payload.get("package") or ""

@@ -115,7 +115,7 @@ run_chroot apt-get install -y --no-install-recommends \
   policykit-1 pkexec dbus-user-session libpam-systemd \
   fonts-noto-core fonts-noto-mono \
   neverball pingus lbreakout2 \
-  nano less pciutils usbutils util-linux mount libpixman-1-0 \
+  nano less pciutils usbutils util-linux mount e2fsprogs libpixman-1-0 \
   ${EXTRA_PACKAGES:-}
 
 # Newer kernel for Intel / AMD / any recent GPU. Keep generic if HWE is missing.
@@ -177,6 +177,21 @@ if [[ -d "$ROOT/overlay" ]]; then
 fi
 chmod +x "$CHROOT/usr/bin/"arcadeos-* 2>/dev/null || true
 chmod +x "$CHROOT/usr/lib/arcadeos/"* 2>/dev/null || true
+
+# Clé Groq : variable de build, sinon le fichier déjà dans l'overlay (dépôt).
+mkdir -p "$CHROOT/etc/arcadeos"
+if [[ -n "${GROQ_API_KEY:-}" ]]; then
+  umask 077
+  printf '%s' "$GROQ_API_KEY" > "$CHROOT/etc/arcadeos/groq.key"
+  log "aide IA : clé Groq injectée au build"
+fi
+if [[ -s "$CHROOT/etc/arcadeos/groq.key" ]]; then
+  chown root:gamer "$CHROOT/etc/arcadeos/groq.key"
+  chmod 640 "$CHROOT/etc/arcadeos/groq.key"
+  log "aide IA : clé présente dans l'image"
+else
+  log "aide IA : pas de clé, suggestions locales seulement"
+fi
 
 # greetd + sway kiosk
 mkdir -p "$CHROOT/etc/greetd" "$CHROOT/etc/arcadeos" "$CHROOT/etc/polkit-1/rules.d"
@@ -321,14 +336,24 @@ set default=0
 set menu_color_normal=white/black
 set menu_color_highlight=black/light-gray
 
-# RAM overlay, no swap, no LUKS, no resume from the internal disk.
-set live_safe="boot=live components username=gamer hostname=arcadeos timezone=Europe/Paris nopersistent noswap noluks nolvm nodmraid live-media-path=/live live-media-timeout=15 noresume resume=none systemd.gpt_auto=0 rd.luks=0 rd.lvm=0 rd.md=0 rd.dm=0 fsck.mode=skip fsck.repair=no"
+# RAM overlay by default. Save mode writes only to a USB partition labeled arcadeos-data.
+set live_core="boot=live components username=gamer hostname=arcadeos timezone=Europe/Paris noswap noluks nolvm nodmraid live-media-path=/live live-media-timeout=15 noresume resume=none systemd.gpt_auto=0 rd.luks=0 rd.lvm=0 rd.md=0 rd.dm=0 fsck.mode=skip fsck.repair=no"
+set live_safe="$live_core nopersistent"
+set live_save="$live_core persistence persistence-media=removable-usb persistence-label=arcadeos-data"
 
 menuentry "ArcadeOS — clé USB (disque dur intact)" {
     if [ ! -e /live/vmlinuz ]; then
         search --no-floppy --file --set=root /live/vmlinuz
     fi
     linux /live/vmlinuz $live_safe quiet splash
+    initrd /live/initrd.img
+}
+
+menuentry "ArcadeOS — sauvegarde sur la clé (disque dur intact)" {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_save quiet splash
     initrd /live/initrd.img
 }
 

@@ -44,9 +44,11 @@ jobs:
             curl file zstd mtools
 
       - name: Build ISO
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           chmod +x scripts/build-iso.sh overlay/usr/bin/* || true
-          sudo -E ./scripts/build-iso.sh
+          sudo --preserve-env=GROQ_API_KEY ./scripts/build-iso.sh
 
       - name: Prove it is an ISO
         run: |

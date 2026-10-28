@@ -52,6 +52,16 @@
       <button type="button" class="primary" id="btn-play">Jouer</button>
       <span id="feat-meta" class="chip">Puzzle · intégré</span>
     </div>
+    <form id="ai-form" class="ai-form">
+      <input id="ai-q" type="text" maxlength="200" placeholder="Un jeu léger, une course, un puzzle…" autocomplete="off" />
+      <button type="submit" class="primary" id="ai-go">Aide IA</button>
+    </form>
+    <div class="ai-chips">
+      <button type="button" data-ai="léger sans GPU">léger sans GPU</button>
+      <button type="button" data-ai="course">course</button>
+      <button type="button" data-ai="puzzle">puzzle</button>
+    </div>
+    <p id="ai-reason" class="muted"></p>
     <p class="kicker">Prêts à jouer</p>
     <div id="rail" class="rail"></div>
     <p id="lib-status" class="store-status hidden"></p>
@@ -85,6 +95,7 @@
       <h3>Clé USB — disque dur intact</h3>
       <p>ArcadeOS est un live. Overlay en RAM. Pas de swap, pas de LUKS, pas de reprise Windows. Le disque interne n’est ni monté, ni formaté, ni utilisé.</p>
       <p>Si le boot a échoué : au menu GRUB, choisis <strong>sans GPU (rendu CPU)</strong> ou <strong>USB strict</strong>.</p>
+      <p>Pour garder les jeux après reboot : <code>arcadeos-usb-save /dev/sdX2</code> (partition USB seulement), puis GRUB <strong>sauvegarde sur la clé</strong>.</p>
     </article>
     <article>
       <h3>Session</h3>
@@ -93,7 +104,7 @@
     </article>
     <article>
       <h3>Arcade Store</h3>
-      <p>Les jeux du store s’installent avec <code>apt-get install</code> depuis les dépôts Ubuntu, puis le binaire est lancé automatiquement. Sur live USB, ils restent en RAM jusqu’au redémarrage.</p>
+      <p>Les jeux du store s’installent avec <code>apt-get install</code> depuis les dépôts Ubuntu, puis le binaire est lancé automatiquement. Par défaut ils restent en RAM. Avec la sauvegarde USB, ils restent sur la clé.</p>
     </article>
     <div class="actions" id="power-row"></div>
   </section>

@@ -34,10 +34,19 @@ Le boot par défaut est un **live RAM**. ArcadeOS :
 
 Menu GRUB (6 s) :
 
-1. **ArcadeOS — clé USB (disque dur intact)** — défaut
-2. **sans GPU (rendu CPU)** — Intel / AMD / rien du tout : llvmpipe, pas de carte graphique requise
-3. **copie en RAM** — après le chargement tu peux retirer la clé
-4. **USB strict** — ignore tout ce qui n’est pas une clé USB
+1. **ArcadeOS — clé USB (disque dur intact)** — défaut, tout en RAM
+2. **sauvegarde sur la clé** — les jeux apt restent sur une partition USB `arcadeos-data` (jamais le HDD)
+3. **sans GPU (rendu CPU)** — Intel / AMD / rien du tout : llvmpipe, pas de carte graphique requise
+4. **copie en RAM** — après le chargement tu peux retirer la clé
+5. **USB strict** — ignore tout ce qui n’est pas une clé USB
+
+Pour garder les téléchargements après un reboot, crée une partition sur la **clé** (pas sur le disque interne), puis dans un terminal (Super+Return) :
+
+```bash
+arcadeos-usb-save /dev/sdX2
+```
+
+Le script refuse tout ce qui n’est pas une partition USB amovible. Redémarre et prends **sauvegarde sur la clé**.
 
 Si l’écran reste noir, prends **sans GPU (rendu CPU)** ou **USB strict**. Aucun GPU NVIDIA n’est requis.
 
@@ -47,6 +56,10 @@ Flasher avec **Ventoy**, **balenaEtcher**, ou `dd`. Évite Rufus en mode « ISO 
 
 Le rayon du haut, ce sont les jeux prêts (intégrés + déjà installés). En dessous, **À télécharger · les plus légers** : un clic fait `apt-get install` puis lance le binaire. Le store complet trie aussi par taille (filtre Plus légers).
 
+## Aide IA
+
+Sur la bibliothèque, **Aide IA** choisit un jeu (Groq, modèle `openai/gpt-oss-20b`). La clé est dans le dépôt : `overlay/etc/arcadeos/groq.key`, copiée dans l’ISO vers `/etc/arcadeos/groq.key`. Sans réseau, le kiosk retombe sur un choix local. Le dépôt est public : la clé est lisible par quiconque clone le repo ou télécharge l’ISO.
+
 ## Arcade Store
 
 Depuis le launcher : **Arcade Store**.
@@ -55,7 +68,8 @@ Depuis le launcher : **Arcade Store**.
 - Un clic → `apt-get install -y --no-install-recommends <paquet>` → le binaire se lance
 - Les titres installés apparaissent dans la **Bibliothèque**
 - Recherche par nom de jeu ou de paquet
-- Sur live USB, les installs tiennent **en RAM** jusqu’au redémarrage — rien n’est écrit sur le disque dur
+- Sur le boot par défaut, les installs tiennent **en RAM** jusqu’au redémarrage
+- Avec **sauvegarde sur la clé**, ils restent sur la partition USB `arcadeos-data` — pas sur le disque dur
 
 Exemples : SuperTux (`supertux` → `supertux2`), SuperTuxKart, 0 A.D. (`0ad`), Wesnoth, Xonotic, Hedgewars, Minetest, Frozen Bubble, MAME, RetroArch, etc.
 
@@ -63,7 +77,7 @@ Exemples : SuperTux (`supertux` → `supertux2`), SuperTuxKart, 0 A.D. (`0ad`), 
 
 1. Télécharge `arcadeos-*-amd64.iso` depuis [Releases](https://github.com/elieli1269/arcadeos/releases/tag/nightly)
 2. [Ventoy](https://www.ventoy.net/) (drop le fichier) ou [balenaEtcher](https://etcher.balena.io/)
-3. Ou : `sudo dd if=arcadeos-1.4.0-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
+3. Ou : `sudo dd if=arcadeos-1.5.0-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync`
 
 Compte : **gamer** / **gamer**. Root : `arcadeos`.
 
@@ -87,14 +101,14 @@ Artifact + release `nightly`. Relance manuelle : Actions → **Build ArcadeOS IS
 ```bash
 sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools dosfstools rsync
 sudo ./scripts/build-iso.sh
-# → out/arcadeos-1.4.0-amd64.iso
+# → out/arcadeos-1.5.0-amd64.iso
 ```
 
 QEMU :
 
 ```bash
 qemu-system-x86_64 -m 4096 -enable-kvm -cpu host -smp 4 \
-  -cdrom out/arcadeos-1.4.0-amd64.iso -boot d -vga virtio
+  -cdrom out/arcadeos-1.5.0-amd64.iso -boot d -vga virtio
 ```
 
 ## Arborescence

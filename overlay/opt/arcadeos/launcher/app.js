@@ -285,6 +285,102 @@
     });
   }
 
+  function catalogForAi() {
+    var rows = [];
+    games.forEach(function (g) {
+      rows.push({ id: g.id, title: g.title, genre: g.genre, size: "" });
+    });
+    ArcadeStore.CATALOG.forEach(function (item) {
+      rows.push({
+        id: item.id,
+        title: item.title,
+        genre: item.genre,
+        size: ArcadeStore.sizeOf(item) || "",
+      });
+    });
+    return rows;
+  }
+
+  function localSuggest(prompt) {
+    var q = String(prompt || "").toLowerCase();
+    function hit(words, id, reason) {
+      for (var i = 0; i < words.length; i++) {
+        if (q.indexOf(words[i]) >= 0) return { ok: true, id: id, reason: reason };
+      }
+      return null;
+    }
+    return (
+      hit(["léger", "leger", "sans gpu", "petit", "cpu"], "moon-buggy", "Léger, ça tourne sans carte graphique.") ||
+      hit(["course", "kart", "voiture", "moto"], "supertuxkart", "Une course arcade.") ||
+      hit(["puzzle", "tetris", "casse"], "stack", "Un puzzle déjà dans la bibliothèque.") ||
+      hit(["stratég", "strateg", "guerre"], "wesnoth", "De la stratégie au tour par tour.") ||
+      hit(["tir", "shoot", "fps"], "chromium-bsu", "Un shoot léger.") ||
+      { ok: true, id: "stack", reason: "Un jeu déjà prêt." }
+    );
+  }
+
+  function applySuggestion(result) {
+    var reason = document.getElementById("ai-reason");
+    var go = document.getElementById("ai-go");
+    if (go) go.textContent = "Aide IA";
+    if (!result || !result.ok) {
+      if (reason) reason.textContent = (result && result.error) || "L’IA n’a pas répondu.";
+      return;
+    }
+    if (reason) reason.textContent = result.reason || "";
+    var list = libraryGames();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === result.id) {
+        focus = i;
+        show("library");
+        renderFeature();
+        return;
+      }
+    }
+    var item = ArcadeStore.byId(result.id);
+    if (item) {
+      show("library");
+      setLibStatus((result.reason || item.title) + " — installation de " + item.package + "…", "busy");
+      ArcadeStore.installAndRun(item);
+      return;
+    }
+    if (reason) reason.textContent = result.reason || "Jeu introuvable.";
+  }
+
+  function askAi(prompt) {
+    var text = String(prompt || "").trim();
+    if (text.length < 2) return;
+    var input = document.getElementById("ai-q");
+    var reason = document.getElementById("ai-reason");
+    var go = document.getElementById("ai-go");
+    if (input) input.value = text;
+    if (go) go.textContent = "…";
+    if (reason) reason.textContent = "Choix en cours…";
+    if (native) {
+      callNative("suggest", { prompt: text, catalog: catalogForAi() });
+      return;
+    }
+    applySuggestion(localSuggest(text));
+  }
+
+  window.__aiDone = function (result) {
+    applySuggestion(result);
+  };
+
+  var aiForm = document.getElementById("ai-form");
+  if (aiForm) {
+    aiForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var input = document.getElementById("ai-q");
+      askAi(input ? input.value : "");
+    });
+  }
+  document.querySelectorAll("[data-ai]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      askAi(btn.getAttribute("data-ai"));
+    });
+  });
+
   document.getElementById("btn-play").addEventListener("click", play);
   document.getElementById("btn-settings").addEventListener("click", function () { show("settings"); });
   document.getElementById("btn-store").addEventListener("click", function () { show("store"); });

@@ -25,6 +25,12 @@ mkdir -p /run
     for mp in /media/*; do
       [ -e "$mp" ] || continue
       mountpoint -q "$mp" 2>/dev/null || continue
+      src=$(findmnt -n -o SOURCE "$mp" 2>/dev/null || true)
+      label=$(blkid -o value -s LABEL "$src" 2>/dev/null || true)
+      if [ "$label" = "arcadeos-data" ]; then
+        echo "keep usb save $mp"
+        continue
+      fi
       echo "umount $mp"
       umount -l "$mp" 2>/dev/null || true
     done

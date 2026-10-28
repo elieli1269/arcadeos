@@ -87,7 +87,19 @@ input, select, textarea { font-size: 16px; }
 .kicker { text-transform: uppercase; letter-spacing: 0.18em; color: var(--subtle); font-size: 11px; margin: 0; }
 #feat-title { font-size: clamp(28px, 8vw, 56px); margin: 8px 0 0; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; }
 .blurb { max-width: 520px; color: var(--muted); line-height: 1.5; font-size: 14px; }
-.actions { display: flex; gap: 8px; align-items: center; margin: 16px 0 24px; flex-wrap: wrap; }
+.actions { display: flex; gap: 8px; align-items: center; margin: 16px 0 12px; flex-wrap: wrap; }
+.ai-form { display: flex; gap: 8px; max-width: 560px; }
+.ai-form input {
+  flex: 1; min-width: 0; height: 44px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--fg); border-radius: var(--radius-md);
+  padding: 0 14px; font: inherit; font-size: 16px;
+}
+.ai-chips { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; }
+.ai-chips button {
+  height: 36px; flex: 0 0 auto; border: 1px solid var(--border); background: var(--surface);
+  color: var(--muted); border-radius: var(--radius-sm); padding: 0 12px; font-size: 12px;
+}
+#ai-reason { min-height: 1.2em; margin: 8px 0 0; }
 .primary {
   height: 44px; padding: 0 18px; border: 0; border-radius: var(--radius-md);
   background: var(--accent); color: var(--accent-fg); font-weight: 600;

@@ -1,0 +1,64 @@
+#!/bin/sh
+# Turn a removable USB partition into the ArcadeOS save volume.
+# Refuses internal disks (NVMe, SATA, non-USB). Does not touch the live ISO partition.
+set -eu
+
+usage() {
+  echo "Usage: arcadeos-usb-save /dev/sdX2"
+  echo "Formate une partition USB en ext4, label arcadeos-data."
+  echo "Jamais le disque interne. Puis GRUB : « sauvegarde sur la clé »."
+  exit 1
+}
+
+DEV=${1:-}
+[ -n "$DEV" ] && [ -b "$DEV" ] || usage
+
+base=$(basename "$DEV")
+if [ ! -e "/sys/class/block/$base/partition" ]; then
+  echo "Refusé : $DEV est un disque entier. Donne une partition libre (ex. /dev/sdb2)."
+  exit 1
+fi
+
+parent=$(basename "$(dirname "$(readlink -f "/sys/class/block/$base")")")
+removable=0
+if [ -r "/sys/class/block/$parent/removable" ]; then
+  removable=$(cat "/sys/class/block/$parent/removable")
+fi
+bus=""
+if command -v udevadm >/dev/null 2>&1; then
+  bus=$(udevadm info -q property -n "/dev/$parent" 2>/dev/null | sed -n 's/^ID_BUS=//p' | head -1)
+fi
+if [ "$removable" != "1" ] || [ "$bus" != "usb" ]; then
+  echo "Refusé : /dev/$parent n'est pas une clé USB (amovible=$removable bus=${bus:-inconnu})."
+  echo "Le disque dur interne n'est pas utilisé."
+  exit 1
+fi
+
+fstype=$(blkid -o value -s TYPE "$DEV" 2>/dev/null || true)
+case "$fstype" in
+  iso9660|udf|vfat|ntfs|crypto_LUKS|swap)
+    echo "Refusé : $DEV est $fstype (média live, Windows ou swap)."
+    exit 1
+    ;;
+esac
+
+for live in /run/live/medium /lib/live/mount/medium; do
+  src=$(findmnt -n -o SOURCE "$live" 2>/dev/null || true)
+  if [ -n "$src" ] && [ "$src" = "$DEV" ]; then
+    echo "Refusé : $DEV est la partition de boot."
+    exit 1
+  fi
+done
+
+echo "USB /dev/$parent — formatage de $DEV en ext4 (label arcadeos-data)."
+echo "Le contenu de CETTE partition sera effacé. Ctrl+C dans 4 secondes pour annuler."
+sleep 4
+mkfs.ext4 -F -L arcadeos-data "$DEV"
+mnt=$(mktemp -d)
+mount "$DEV" "$mnt"
+printf '%s\n' '/ union' >"$mnt/persistence.conf"
+sync
+umount "$mnt"
+rmdir "$mnt"
+echo "OK. Redémarre et choisis « sauvegarde sur la clé »."
+echo "Les jeux apt restent sur la clé. Le HDD/SSD interne n'a pas été touché."
