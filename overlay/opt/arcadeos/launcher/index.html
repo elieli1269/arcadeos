@@ -45,23 +45,28 @@
   </header>
 
   <main id="library" class="library">
-    <p class="kicker">En vedette</p>
-    <h2 id="feat-title">STACK</h2>
-    <p id="feat-blurb" class="blurb">Sept pièces. Une grille. Les lignes disparaissent.</p>
-    <div class="actions">
-      <button type="button" class="primary" id="btn-play">Jouer</button>
-      <span id="feat-meta" class="chip">Puzzle · intégré</span>
+    <div class="feature">
+      <div id="feat-cover" class="feat-cover"></div>
+      <div class="feature-copy">
+        <p class="kicker">En vedette</p>
+        <h2 id="feat-title">STACK</h2>
+        <p id="feat-blurb" class="blurb">Sept pièces. Une grille. Les lignes disparaissent.</p>
+        <div class="actions">
+          <button type="button" class="primary" id="btn-play">Jouer</button>
+          <span id="feat-meta" class="chip">Puzzle · intégré</span>
+        </div>
+        <form id="ai-form" class="ai-form">
+          <input id="ai-q" type="text" maxlength="200" placeholder="Un jeu léger, une course, un puzzle…" autocomplete="off" />
+          <button type="submit" class="primary" id="ai-go">Aide IA</button>
+        </form>
+        <div class="ai-chips">
+          <button type="button" data-ai="léger sans GPU">léger sans GPU</button>
+          <button type="button" data-ai="course">course</button>
+          <button type="button" data-ai="puzzle">puzzle</button>
+        </div>
+        <p id="ai-reason" class="muted"></p>
+      </div>
     </div>
-    <form id="ai-form" class="ai-form">
-      <input id="ai-q" type="text" maxlength="200" placeholder="Un jeu léger, une course, un puzzle…" autocomplete="off" />
-      <button type="submit" class="primary" id="ai-go">Aide IA</button>
-    </form>
-    <div class="ai-chips">
-      <button type="button" data-ai="léger sans GPU">léger sans GPU</button>
-      <button type="button" data-ai="course">course</button>
-      <button type="button" data-ai="puzzle">puzzle</button>
-    </div>
-    <p id="ai-reason" class="muted"></p>
     <p class="kicker">Prêts à jouer</p>
     <div id="rail" class="rail"></div>
     <p id="lib-status" class="store-status hidden"></p>

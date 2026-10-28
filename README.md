@@ -56,6 +56,10 @@ Flasher avec **Ventoy**, **balenaEtcher**, ou `dd`. Évite Rufus en mode « ISO 
 
 Le rayon du haut, ce sont les jeux prêts (intégrés + déjà installés). En dessous, **À télécharger · les plus légers** : un clic fait `apt-get install` puis lance le binaire. Le store complet trie aussi par taille (filtre Plus légers).
 
+## Écran
+
+Fond charbon, accent ambre. Grille 2 colonnes sur téléphone, plus sur grand écran. Chaque jeu a une pochette dans `launcher/covers/` : logo ou capture du jeu quand on en a une, sinon une carte couleur.
+
 ## Aide IA
 
 Sur la bibliothèque, **Aide IA** choisit un jeu (Groq, modèle `openai/gpt-oss-20b`). La clé est dans le dépôt : `overlay/etc/arcadeos/groq.key`, copiée dans l’ISO vers `/etc/arcadeos/groq.key`. Sans réseau, le kiosk retombe sur un choix local. Le dépôt est public : la clé est lisible par quiconque clone le repo ou télécharge l’ISO.

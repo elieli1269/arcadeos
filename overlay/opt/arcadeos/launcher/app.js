@@ -79,6 +79,11 @@
     });
   }
 
+  function paintCover(el, id) {
+    if (!el || !id) return;
+    el.style.backgroundImage = "url('covers/" + id + ".png')";
+  }
+
   function renderRail() {
     const list = libraryGames();
     if (focus >= list.length) focus = 0;
@@ -89,6 +94,7 @@
       b.className = "card" + (i === focus ? " focus" : "");
       const tag = g.fromStore ? "Store · installé" : g.native ? "Natif · ISO" : "Arcade";
       b.innerHTML = "<div class=\"tile\"></div><strong>" + g.title + "</strong><span>" + tag + "</span>";
+      paintCover(b.querySelector(".tile"), g.id);
       b.addEventListener("click", function () {
         focus = i;
         renderFeature();
@@ -114,6 +120,7 @@
       b.className = "card";
       var size = ArcadeStore.sizeOf(item) || item.package;
       b.innerHTML = "<div class=\"tile\"></div><strong>" + item.title + "</strong><span>" + size + " · " + item.package + "</span>";
+      paintCover(b.querySelector(".tile"), item.id);
       b.addEventListener("click", function () {
         setLibStatus("Téléchargement de " + item.title + " (" + item.package + ")… puis lancement.", "busy");
         ArcadeStore.installAndRun(item);
@@ -140,6 +147,7 @@
     if (!g) return;
     els.featTitle.textContent = g.title;
     els.featBlurb.textContent = g.blurb;
+    paintCover(document.getElementById("feat-cover"), g.id);
     els.featMeta.textContent =
       g.genre + (g.fromStore ? " · store" : g.native ? " · natif ISO" : " · intégré");
     renderRail();
@@ -172,6 +180,7 @@
         "<p>" + item.blurb + "</p>" +
         "<code>apt install " + item.package + " → " + item.command + "</code>" +
         "<span class=\"badge\">" + (installed ? "Installé · Jouer" : "Télécharger & lancer") + "</span>";
+      paintCover(card.querySelector(".tile"), item.id);
       card.addEventListener("click", function () {
         storeFocus = i;
         renderStore();
