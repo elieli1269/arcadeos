@@ -114,7 +114,6 @@ run_chroot apt-get install -y --no-install-recommends \
   pipewire pipewire-pulse wireplumber libspa-0.2-bluetooth alsa-utils \
   policykit-1 pkexec dbus-user-session libpam-systemd \
   fonts-noto-core fonts-noto-mono \
-  neverball pingus lbreakout2 \
   nano less pciutils usbutils util-linux mount e2fsprogs libpixman-1-0 \
   ${EXTRA_PACKAGES:-}
 

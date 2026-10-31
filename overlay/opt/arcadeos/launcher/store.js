@@ -1,6 +1,9 @@
 /* Arcade Store — paquets Ubuntu, apt install, lancement auto */
 window.ArcadeStore = (function () {
   const CATALOG = [
+    { id: "lbreakout2", title: "LBreakout2", genre: "Arcade", blurb: "Le casse-briques classique.", package: "lbreakout2", command: "lbreakout2" },
+    { id: "neverball", title: "Neverball", genre: "Action", blurb: "Incline le monde. La balle cherche la sortie.", package: "neverball", command: "neverball" },
+    { id: "pingus", title: "Pingus", genre: "Puzzle", blurb: "Des pingouins, des tunnels, un timing serré.", package: "pingus", command: "pingus" },
     { id: "supertux", title: "SuperTux", genre: "Plateforme", blurb: "Tux saute et glisse dans un monde de glace.", package: "supertux", command: "supertux2" },
     { id: "supertuxkart", title: "SuperTuxKart", genre: "Course", blurb: "Kart arcade, circuits, coupes, local.", package: "supertuxkart", command: "supertuxkart" },
     { id: "teeworlds", title: "Teeworlds", genre: "Multi", blurb: "Shooter 2D arcade, local ou réseau.", package: "teeworlds", command: "teeworlds" },

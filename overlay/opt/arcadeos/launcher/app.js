@@ -52,7 +52,6 @@
     const extra = [];
     ArcadeStore.CATALOG.forEach(function (item) {
       if (!ArcadeStore.isInstalled(item.id)) return;
-      if (games.some(function (g) { return g.id === item.id; })) return;
       extra.push({
         id: item.id,
         title: item.title,
@@ -64,7 +63,7 @@
         pkg: item.package,
       });
     });
-    return games.concat(extra);
+    return extra;
   }
 
   function filteredStore() {
@@ -106,27 +105,7 @@
       });
       els.rail.appendChild(b);
     });
-    if (els.libCount) els.libCount.textContent = list.length + " jeux prêts · " + ArcadeStore.CATALOG.length + " au store";
-    renderPending();
-  }
-
-  function renderPending() {
-    if (!els.pending) return;
-    var list = ArcadeStore.lightPending();
-    els.pending.innerHTML = "";
-    list.forEach(function (item) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "card";
-      var size = ArcadeStore.sizeOf(item) || item.package;
-      b.innerHTML = "<div class=\"tile\"></div><strong>" + item.title + "</strong><span>" + size + " · " + item.package + "</span>";
-      paintCover(b.querySelector(".tile"), item.id);
-      b.addEventListener("click", function () {
-        setLibStatus("Téléchargement de " + item.title + " (" + item.package + ")… puis lancement.", "busy");
-        ArcadeStore.installAndRun(item);
-      });
-      els.pending.appendChild(b);
-    });
+    if (els.libCount) els.libCount.textContent = list.length + " jeux installés · " + ArcadeStore.CATALOG.length + " au store";
   }
 
   function setLibStatus(text, kind) {
@@ -143,13 +122,26 @@
 
   function renderFeature() {
     const list = libraryGames();
-    const g = list[focus] || list[0];
-    if (!g) return;
+    const empty = document.getElementById("lib-empty");
+    const feature = document.querySelector(".feature");
+    const ready = document.getElementById("ready-kicker");
+    if (!list.length) {
+      if (feature) feature.classList.add("hidden");
+      if (empty) empty.classList.remove("hidden");
+      if (ready) ready.classList.add("hidden");
+      els.rail.innerHTML = "";
+      if (els.libCount) els.libCount.textContent = "0 jeu · " + ArcadeStore.CATALOG.length + " au store";
+      return;
+    }
+    if (feature) feature.classList.remove("hidden");
+    if (empty) empty.classList.add("hidden");
+    if (ready) ready.classList.remove("hidden");
+    if (focus >= list.length) focus = 0;
+    const g = list[focus];
     els.featTitle.textContent = g.title;
     els.featBlurb.textContent = g.blurb;
     paintCover(document.getElementById("feat-cover"), g.id);
-    els.featMeta.textContent =
-      g.genre + (g.fromStore ? " · store" : g.native ? " · natif ISO" : " · intégré");
+    els.featMeta.textContent = g.genre + " · store";
     renderRail();
   }
 
@@ -393,8 +385,8 @@
   document.getElementById("btn-play").addEventListener("click", play);
   document.getElementById("btn-settings").addEventListener("click", function () { show("settings"); });
   document.getElementById("btn-store").addEventListener("click", function () { show("store"); });
-  var allStore = document.getElementById("btn-all-store");
-  if (allStore) allStore.addEventListener("click", function () { show("store"); });
+  var emptyStore = document.getElementById("btn-empty-store");
+  if (emptyStore) emptyStore.addEventListener("click", function () { show("store"); });
   document.getElementById("btn-library").addEventListener("click", function () { show("library"); });
   document.getElementById("btn-back").addEventListener("click", function () { show("library"); });
   var dockLibrary = document.getElementById("dock-library");

@@ -108,6 +108,9 @@ input, select, textarea { font-size: 16px; }
 .feature {
   display: grid; gap: 14px; align-items: center;
 }
+.lib-empty { max-width: 420px; margin-top: 48px; }
+.lib-empty h2 { font-size: clamp(28px, 6vw, 40px); margin: 8px 0 0; letter-spacing: -0.03em; }
+.lib-empty .primary { margin-top: 18px; }
 .feat-cover {
   aspect-ratio: 640 / 292; border-radius: var(--radius-lg);
   background: var(--surface-2) center / cover no-repeat;

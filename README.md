@@ -56,6 +56,8 @@ Flasher avec **Ventoy**, **balenaEtcher**, ou `dd`. Évite Rufus en mode « ISO 
 
 Le rayon du haut, ce sont les jeux prêts (intégrés + déjà installés). En dessous, **À télécharger · les plus légers** : un clic fait `apt-get install` puis lance le binaire. Le store complet trie aussi par taille (filtre Plus légers).
 
+La bibliothèque démarre vide. Les jeux n’y arrivent qu’après un téléchargement dans l’Arcade Store. L’image ne préinstalle plus Neverball, Pingus ni LBreakout2 : ils sont dans le store.
+
 ## Écran
 
 Fond charbon, accent ambre. Grille 2 colonnes sur téléphone, plus sur grand écran. Chaque jeu a une pochette dans `launcher/covers/` : logo ou capture du jeu quand on en a une, sinon une carte couleur.
