@@ -185,8 +185,8 @@ if [[ -n "${GROQ_API_KEY:-}" ]]; then
   log "aide IA : clé Groq injectée au build"
 fi
 if [[ -s "$CHROOT/etc/arcadeos/groq.key" ]]; then
-  chown root:gamer "$CHROOT/etc/arcadeos/groq.key"
-  chmod 640 "$CHROOT/etc/arcadeos/groq.key"
+  run_chroot chown root:gamer /etc/arcadeos/groq.key
+  run_chroot chmod 640 /etc/arcadeos/groq.key
   log "aide IA : clé présente dans l'image"
 else
   log "aide IA : pas de clé, suggestions locales seulement"
