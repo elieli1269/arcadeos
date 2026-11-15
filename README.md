@@ -32,13 +32,16 @@ Le boot par défaut est un **live RAM**. ArcadeOS :
 - ne monte **pas** l’EFI Windows
 - écrit uniquement sur un overlay **tmpfs** (RAM) + la clé si tu l’utilises comme média live
 
-Menu GRUB (6 s) :
+Menu GRUB (10 s). Dans VirtualBox le menu choisit tout seul **VirtualBox** (`noapic`), parce que le noyau 6.8 plante sinon : `IO-APIC + timer doesn't work`.
 
-1. **ArcadeOS — clé USB (disque dur intact)** — défaut, tout en RAM
-2. **sauvegarde sur la clé** — les jeux apt restent sur une partition USB `arcadeos-data` (jamais le HDD)
-3. **sans GPU (rendu CPU)** — Intel / AMD / rien du tout : llvmpipe, pas de carte graphique requise
-4. **copie en RAM** — après le chargement tu peux retirer la clé
-5. **USB strict** — ignore tout ce qui n’est pas une clé USB
+1. **ArcadeOS — clé USB (disque dur intact)** — défaut sur un vrai PC, tout en RAM
+2. **VirtualBox** — `noapic`, pour la machine virtuelle
+3. **sauvegarde sur la clé** — les jeux apt restent sur une partition USB `arcadeos-data` (jamais le HDD)
+4. **sans GPU (rendu CPU)** — Intel / AMD / rien du tout : llvmpipe, pas de carte graphique requise
+5. **copie en RAM** — après le chargement tu peux retirer la clé
+6. **USB strict** — ignore tout ce qui n’est pas une clé USB
+
+Sur l’ISO actuelle, avant le prochain build : au menu GRUB, choisis **VirtualBox**, ou touche `e` sur la première ligne, ajoute `noapic` à la fin de la ligne `linux`, puis `Ctrl+X`.
 
 Pour garder les téléchargements après un reboot, crée une partition sur la **clé** (pas sur le disque interne), puis dans un terminal (Super+Return) :
 

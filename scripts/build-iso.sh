@@ -329,8 +329,9 @@ insmod iso9660
 insmod part_gpt
 insmod part_msdos
 insmod ext2
+insmod smbios
 terminal_output gfxterm
-set timeout=6
+set timeout=10
 set default=0
 set menu_color_normal=white/black
 set menu_color_highlight=black/light-gray
@@ -340,11 +341,34 @@ set live_core="boot=live components username=gamer hostname=arcadeos timezone=Eu
 set live_safe="$live_core nopersistent"
 set live_save="$live_core persistence persistence-media=removable-usb persistence-label=arcadeos-data"
 
+# VirtualBox: kernel 6.8 panics with "IO-APIC + timer doesn't work" unless noapic.
+set vbox=""
+if smbios --type 1 --get-string 4 --set mfr; then
+  if [ "$mfr" = "innotek GmbH" ]; then
+    set vbox="noapic"
+    set default="vbox"
+  fi
+fi
+if smbios --type 1 --get-string 5 --set pname; then
+  if [ "$pname" = "VirtualBox" ]; then
+    set vbox="noapic"
+    set default="vbox"
+  fi
+fi
+
 menuentry "ArcadeOS — clé USB (disque dur intact)" {
     if [ ! -e /live/vmlinuz ]; then
         search --no-floppy --file --set=root /live/vmlinuz
     fi
     linux /live/vmlinuz $live_safe quiet splash
+    initrd /live/initrd.img
+}
+
+menuentry "ArcadeOS — VirtualBox" --id vbox {
+    if [ ! -e /live/vmlinuz ]; then
+        search --no-floppy --file --set=root /live/vmlinuz
+    fi
+    linux /live/vmlinuz $live_safe noapic quiet splash
     initrd /live/initrd.img
 }
 
