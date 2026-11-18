@@ -32,7 +32,7 @@ Le boot par défaut est un **live RAM**. ArcadeOS :
 - ne monte **pas** l’EFI Windows
 - écrit uniquement sur un overlay **tmpfs** (RAM) + la clé si tu l’utilises comme média live
 
-Menu GRUB (10 s). Dans VirtualBox le menu choisit tout seul **VirtualBox** (`noapic`), parce que le noyau 6.8 plante sinon : `IO-APIC + timer doesn't work`.
+L’image **1.8.1** démarrait le noyau HWE 7.0. Il plante (VirtualBox : `IO-APIC + timer doesn't work`). **1.8.2** démarre le noyau 6.8, avec `noapic` sur la première ligne du menu, sans écran splash : tu vois le texte du boot, puis le launcher.
 
 1. **ArcadeOS — clé USB (disque dur intact)** — défaut sur un vrai PC, tout en RAM
 2. **VirtualBox** — `noapic`, pour la machine virtuelle

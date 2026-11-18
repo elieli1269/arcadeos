@@ -308,9 +308,16 @@ rm -rf "$CHROOT/tmp/"* "$CHROOT/var/tmp/"* "$CHROOT/var/log/"* "$CHROOT/root/.ba
 cleanup_mounts
 trap - EXIT
 
-KIMAGE="$(ls -1 "$CHROOT/boot"/vmlinuz-* 2>/dev/null | sort | tail -1 || true)"
-IIMAGE="$(ls -1 "$CHROOT/boot"/initrd.img-* 2>/dev/null | sort | tail -1 || true)"
+# Live kernel is generic 6.8. The HWE kernel (7.x) panics in VirtualBox
+# ("IO-APIC + timer doesn't work") and is not what we boot.
+KIMAGE="$(ls -1 "$CHROOT/boot"/vmlinuz-6.8* 2>/dev/null | sort | tail -1 || true)"
+IIMAGE="$(ls -1 "$CHROOT/boot"/initrd.img-6.8* 2>/dev/null | sort | tail -1 || true)"
+if [[ -z "$KIMAGE" || -z "$IIMAGE" ]]; then
+  KIMAGE="$(ls -1 "$CHROOT/boot"/vmlinuz-* 2>/dev/null | sort | tail -1 || true)"
+  IIMAGE="$(ls -1 "$CHROOT/boot"/initrd.img-* 2>/dev/null | sort | tail -1 || true)"
+fi
 [[ -n "$KIMAGE" && -n "$IIMAGE" ]] || die "kernel/initrd not found in chroot /boot"
+log "live kernel: $(basename "$KIMAGE")"
 cp "$KIMAGE" "$ISO/live/vmlinuz"
 cp "$IIMAGE" "$ISO/live/initrd.img"
 
@@ -360,7 +367,7 @@ menuentry "ArcadeOS — clé USB (disque dur intact)" {
     if [ ! -e /live/vmlinuz ]; then
         search --no-floppy --file --set=root /live/vmlinuz
     fi
-    linux /live/vmlinuz $live_safe quiet splash
+    linux /live/vmlinuz $live_safe noapic
     initrd /live/initrd.img
 }
 
@@ -368,7 +375,7 @@ menuentry "ArcadeOS — VirtualBox" --id vbox {
     if [ ! -e /live/vmlinuz ]; then
         search --no-floppy --file --set=root /live/vmlinuz
     fi
-    linux /live/vmlinuz $live_safe noapic quiet splash
+    linux /live/vmlinuz $live_safe noapic
     initrd /live/initrd.img
 }
 
